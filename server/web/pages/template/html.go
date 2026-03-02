@@ -130,20 +130,20 @@ var Staticcssmainc718f56fchunkcss []byte
 //go:embed pages/static/css/main.c718f56f.chunk.css.map
 var Staticcssmainc718f56fchunkcssmap []byte
 
-//go:embed pages/static/js/2.572fb62a.chunk.js
-var Staticjs2572fb62achunkjs []byte
+//go:embed pages/static/js/2.79119296.chunk.js
+var Staticjs279119296chunkjs []byte
 
-//go:embed pages/static/js/2.572fb62a.chunk.js.LICENSE.txt
-var Staticjs2572fb62achunkjsLICENSEtxt []byte
+//go:embed pages/static/js/2.79119296.chunk.js.LICENSE.txt
+var Staticjs279119296chunkjsLICENSEtxt []byte
 
-//go:embed pages/static/js/2.572fb62a.chunk.js.map
-var Staticjs2572fb62achunkjsmap []byte
+//go:embed pages/static/js/2.79119296.chunk.js.map
+var Staticjs279119296chunkjsmap []byte
 
-//go:embed pages/static/js/main.88e50880.chunk.js
-var Staticjsmain88e50880chunkjs []byte
+//go:embed pages/static/js/main.98aadd52.chunk.js
+var Staticjsmain98aadd52chunkjs []byte
 
-//go:embed pages/static/js/main.88e50880.chunk.js.map
-var Staticjsmain88e50880chunkjsmap []byte
+//go:embed pages/static/js/main.98aadd52.chunk.js.map
+var Staticjsmain98aadd52chunkjsmap []byte
 
 //go:embed pages/static/js/runtime-main.5ed86a79.js
 var Staticjsruntimemain5ed86a79js []byte

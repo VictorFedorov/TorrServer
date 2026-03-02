@@ -238,12 +238,24 @@ export default function RightSideComponent({
           <UpdatePosterButton
             onClick={() => {
               let fixedTitle = isCustomTitleEnabled ? title : originalTorrentTitle ? parsedTitle : title
-              const titleFixedMatch = fixedTitle.replaceAll(/\./g, ' ').match(/^([\w -]+)/)
-              if (titleFixedMatch?.length && titleFixedMatch[0].length > 0) {
+              // Clean title for TMDB search: remove tags like [NUM], (1-15 ...) metadata,
+              // dots→spaces, strip season/episode info, quality tags, take first meaningful part.
+              // Uses Unicode \p{L} to support Cyrillic and other non-Latin scripts.
+              fixedTitle = fixedTitle
+                .replace(/\[.*?\]/g, '')
+                .replace(/\(\d[\d\s\-:]*(?:сезон|сезоны|season|серии?)?[^)]*\)/gi, '')
+                .replaceAll(/\./g, ' ')
+                .split(/[/|\\]/, 1)[0]
+                .replace(/\b[Ss]\d{1,2}.*$/, '')
+                .replace(/\b(сезон|сезоны|серии?|сeзон|сeрии?)\b.*$/i, '')
+                .replace(/\b(1080p|720p|480p|2160p|HDRip|BDRip|WEBRip|WEB-DL|BluRay|HDTV)\b.*$/i, '')
+                .trim()
+              const titleFixedMatch = fixedTitle.match(/^([\p{L}\d][\p{L}\d :,'\-]*[\p{L}\d])/u)
+              if (titleFixedMatch?.length && titleFixedMatch[0].length > 1) {
                 ;[fixedTitle] = titleFixedMatch
               }
 
-              posterSearch(fixedTitle, posterSearchLanguage)
+              posterSearch(fixedTitle.trim(), posterSearchLanguage)
             }}
             color='primary'
             variant='contained'
