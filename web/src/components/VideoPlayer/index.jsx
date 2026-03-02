@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Box, CircularProgress, DialogContent, DialogTitle, IconButton, Typography, useMediaQuery } from '@material-ui/core'
 import { makeStyles } from '@material-ui/core/styles'
 import CloseIcon from '@material-ui/icons/Close'
@@ -98,7 +98,6 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
 
   const { audioTracks: ffprobeAudio, needsTranscode, duration: ffprobeDuration, loaded: trackInfoLoaded } = useTrackInfo(hash, fileIndex, open)
   const playerReady = !open || trackInfoLoaded || !hash || fileIndex == null
-  const seekingRef = useRef(false)
 
   const handleClose = useCallback(() => setOpen(false), [])
 
@@ -154,38 +153,53 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
       enhanceAudioLabels()
       player.audioTracks().addEventListener('addtrack', enhanceAudioLabels)
 
-      // For transcoded streams: set duration from ffprobe and handle seeking
+      // For transcoded streams: custom duration and seeking.
+      // Fragmented MP4 has no duration in metadata and the browser only allows
+      // seeking within the buffered range. We override currentTime() to track
+      // a seek offset and intercept all seeks to restart ffmpeg from that point.
       if (needsTranscode && hash && fileIndex != null) {
-        if (ffprobeDuration) {
-          // Force duration from ffprobe data.
-          // Fragmented MP4 streams report no duration in metadata, so the browser
-          // gives Infinity which Video.js converts to seekable.end(0) — a small
-          // number based on buffered data. We must always override this.
-          const forceDuration = () => {
-            if (player.duration() !== ffprobeDuration) {
-              player.duration(ffprobeDuration)
-            }
-            // Ensure progress bar is visible (not live mode)
-            player.removeClass('vjs-live')
-          }
+        let seekOffset = 0
+        let changingSource = false
 
+        const forceDuration = () => {
+          if (ffprobeDuration && player.duration() !== ffprobeDuration) {
+            player.duration(ffprobeDuration)
+          }
+          player.removeClass('vjs-live')
+        }
+
+        if (ffprobeDuration) {
           forceDuration()
           player.on('loadedmetadata', forceDuration)
           player.on('durationchange', forceDuration)
           player.on('loadeddata', forceDuration)
-          // timeupdate fires regularly (~250ms) and acts as a persistent guard
           player.on('timeupdate', forceDuration)
         }
 
-        player.on('seeking', () => {
-          if (seekingRef.current) return
-          seekingRef.current = true
-          const time = Math.floor(player.currentTime())
-          player.src({ src: getTranscodeUrl(hash, fileIndex, time), type: 'video/mp4' })
-          if (ffprobeDuration) player.duration(ffprobeDuration)
-          player.play()
-          seekingRef.current = false
-        })
+        // Override currentTime: getter adds offset, setter triggers source change
+        const origCurrentTime = player.currentTime.bind(player)
+        // eslint-disable-next-line no-param-reassign
+        player.currentTime = function (seconds) {
+          if (arguments.length > 0) {
+            if (changingSource) return origCurrentTime(seconds)
+            const targetTime = Math.floor(seconds)
+            const currentAbsolute = Math.floor(origCurrentTime() + seekOffset)
+            // Only restart ffmpeg for seeks > 2 seconds away
+            if (Math.abs(targetTime - currentAbsolute) > 2 && ffprobeDuration) {
+              changingSource = true
+              seekOffset = targetTime
+              player.src({ src: getTranscodeUrl(hash, fileIndex, targetTime), type: 'video/mp4' })
+              forceDuration()
+              player.play()
+              player.one('playing', () => { changingSource = false })
+              setTimeout(() => { changingSource = false }, 10000)
+              return
+            }
+            return origCurrentTime(seconds)
+          }
+          // Getter: real stream position + offset
+          return origCurrentTime() + seekOffset
+        }
       }
 
       // Handle playback errors (codec not supported)
