@@ -100,7 +100,24 @@ const Table = memo(
                           </a>
                         )}
                         {isSupported ? (
-                          <VideoPlayer title={title} videoSrc={link} onNotSupported={() => setIsSupported(false)} />
+                          <VideoPlayer
+                            title={title}
+                            videoSrc={link}
+                            hash={hash}
+                            fileIndex={id}
+                            onNotSupported={() => setIsSupported(false)}
+                            renderTrigger={onClick => (
+                              <Button
+                                style={{ width: '100%' }}
+                                variant='outlined'
+                                color='primary'
+                                size='small'
+                                onClick={onClick}
+                              >
+                                {t('Play')}
+                              </Button>
+                            )}
+                          />
                         ) : (
                           shouldShowOpenLink && (
                             <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>

@@ -62,6 +62,7 @@ type BTSets struct {
 	DisableUPNP       bool
 	DisableDHT        bool
 	DisablePEX        bool
+	EnableLPD         bool // Local Peer Discovery (BEP 14)
 	DisableUpload     bool
 	DownloadRateLimit int // in kb, 0 - inf
 	UploadRateLimit   int // in kb, 0 - inf
@@ -127,15 +128,13 @@ func SetBTSets(sets *BTSets) {
 	if sets.TorrentsSavePath == "" {
 		sets.UseDisk = false
 	} else if sets.UseDisk {
-		BTsets = sets
-
-		go filepath.WalkDir(sets.TorrentsSavePath, func(path string, d fs.DirEntry, err error) error {
+		filepath.WalkDir(sets.TorrentsSavePath, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
 			if d.IsDir() && strings.ToLower(d.Name()) == ".tsc" {
-				BTsets.TorrentsSavePath = path
-				log.TLogln("Find directory \"" + BTsets.TorrentsSavePath + "\", use as cache dir")
+				sets.TorrentsSavePath = path
+				log.TLogln("Find directory \"" + sets.TorrentsSavePath + "\", use as cache dir")
 				return io.EOF
 			}
 			if d.IsDir() && strings.HasPrefix(d.Name(), ".") {

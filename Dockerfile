@@ -1,5 +1,5 @@
 ### FRONT BUILD START ###
-FROM --platform=$BUILDPLATFORM node:16-alpine AS front
+FROM --platform=$BUILDPLATFORM node:18-alpine AS front
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ RUN yarn install
 
 # Build front once upon multiarch build
 COPY ./web .
-RUN yarn run build
+RUN NODE_OPTIONS=--openssl-legacy-provider yarn run build
 ### FRONT BUILD END ###
 
 

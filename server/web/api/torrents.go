@@ -49,36 +49,23 @@ func torrents(c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	c.Status(http.StatusBadRequest)
 	switch req.Action {
 	case "add":
-		{
-			addTorrent(req, c)
-		}
+		addTorrent(req, c)
 	case "get":
-		{
-			getTorrent(req, c)
-		}
+		getTorrent(req, c)
 	case "set":
-		{
-			setTorrent(req, c)
-		}
+		setTorrent(req, c)
 	case "rem":
-		{
-			remTorrent(req, c)
-		}
+		remTorrent(req, c)
 	case "list":
-		{
-			listTorrents(c)
-		}
+		listTorrents(c)
 	case "drop":
-		{
-			dropTorrent(req, c)
-		}
+		dropTorrent(req, c)
 	case "wipe":
-		{
-			wipeTorrents(c)
-		}
+		wipeTorrents(c)
+	default:
+		c.AbortWithError(http.StatusBadRequest, errors.New("unknown action: "+req.Action))
 	}
 }
 

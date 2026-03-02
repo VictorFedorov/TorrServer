@@ -167,12 +167,16 @@ func RemTorrent(hashHex string) {
 	if bts.RemoveTorrent(hash) {
 		if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
 			name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
-			ff, _ := os.ReadDir(name)
-			for _, f := range ff {
-				os.Remove(filepath.Join(name, f.Name()))
-			}
-			err := os.Remove(name)
+			ff, err := os.ReadDir(name)
 			if err != nil {
+				log.TLogln("Error reading cache dir:", err)
+			}
+			for _, f := range ff {
+				if err := os.Remove(filepath.Join(name, f.Name())); err != nil {
+					log.TLogln("Error removing cache file:", err)
+				}
+			}
+			if err := os.Remove(name); err != nil {
 				log.TLogln("Error remove cache:", err)
 			}
 		}
@@ -246,7 +250,13 @@ func SetDefSettings() {
 }
 
 func dropAllTorrent() {
+	bts.mu.RLock()
+	torrents := make([]*Torrent, 0, len(bts.torrents))
 	for _, torr := range bts.torrents {
+		torrents = append(torrents, torr)
+	}
+	bts.mu.RUnlock()
+	for _, torr := range torrents {
 		torr.drop()
 		<-torr.closed
 	}
