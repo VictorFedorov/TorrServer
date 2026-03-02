@@ -161,7 +161,7 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
   const mime = getMimeType(videoSrc)
 
   const playerOptions = {
-    autoplay: true,
+    autoplay: 'any',
     controls: true,
     responsive: true,
     fluid: true,
