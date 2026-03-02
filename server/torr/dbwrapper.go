@@ -5,7 +5,6 @@ import (
 
 	"server/settings"
 	"server/torr/state"
-	"server/torr/utils"
 
 	"github.com/anacrolix/torrent/metainfo"
 )
@@ -33,9 +32,7 @@ func AddTorrentDB(torr *Torrent) {
 		t.Data = torr.Data
 	}
 
-	if torr.Poster != "" && utils.CheckImgUrl(torr.Poster) {
-		t.Poster = torr.Poster
-	}
+	t.Poster = torr.Poster
 	t.Size = torr.Size
 	if t.Size == 0 && torr.Torrent != nil {
 		t.Size = torr.Torrent.Length()
