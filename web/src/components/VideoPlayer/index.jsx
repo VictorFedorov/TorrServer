@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { DialogContent, DialogTitle, IconButton, Typography, useMediaQuery } from '@material-ui/core'
+import { Box, CircularProgress, DialogContent, DialogTitle, IconButton, Typography, useMediaQuery } from '@material-ui/core'
 import { makeStyles } from '@material-ui/core/styles'
 import CloseIcon from '@material-ui/icons/Close'
 import PlayArrowIcon from '@material-ui/icons/PlayArrow'
@@ -96,7 +96,8 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
 
-  const { audioTracks: ffprobeAudio, needsTranscode } = useTrackInfo(hash, fileIndex, open)
+  const { audioTracks: ffprobeAudio, needsTranscode, loaded: trackInfoLoaded } = useTrackInfo(hash, fileIndex, open)
+  const playerReady = !open || trackInfoLoaded || !hash || fileIndex == null
   const seekingRef = useRef(false)
 
   const handleClose = useCallback(() => setOpen(false), [])
@@ -236,7 +237,13 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
             </IconButton>
           </DialogTitle>
           <DialogContent className={classes.content}>
-            <VideoJsPlayer options={playerOptions} onReady={handleReady} />
+            {playerReady ? (
+              <VideoJsPlayer options={playerOptions} onReady={handleReady} />
+            ) : (
+              <Box display='flex' justifyContent='center' alignItems='center' minHeight={300}>
+                <CircularProgress style={{ color: '#fff' }} />
+              </Box>
+            )}
           </DialogContent>
         </StyledDialog>
       )}

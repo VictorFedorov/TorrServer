@@ -6,6 +6,7 @@ const useTrackInfo = (hash, fileIndex, enabled) => {
   const [audioTracks, setAudioTracks] = useState(null)
   const [subtitleTracks, setSubtitleTracks] = useState(null)
   const [needsTranscode, setNeedsTranscode] = useState(false)
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     if (!enabled || !hash || fileIndex == null) return
@@ -42,9 +43,11 @@ const useTrackInfo = (hash, fileIndex, enabled) => {
         setAudioTracks(audio.length ? audio : null)
         setSubtitleTracks(subs.length ? subs : null)
         setNeedsTranscode(transcode)
+        setLoaded(true)
       })
       .catch(() => {
-        // ffprobe unavailable — silently ignore
+        // ffprobe unavailable — skip transcoding
+        setLoaded(true)
       })
 
     return () => {
@@ -52,7 +55,7 @@ const useTrackInfo = (hash, fileIndex, enabled) => {
     }
   }, [hash, fileIndex, enabled])
 
-  return { audioTracks, subtitleTracks, needsTranscode }
+  return { audioTracks, subtitleTracks, needsTranscode, loaded }
 }
 
 export default useTrackInfo
