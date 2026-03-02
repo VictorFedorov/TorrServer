@@ -6,6 +6,7 @@ const useTrackInfo = (hash, fileIndex, enabled) => {
   const [audioTracks, setAudioTracks] = useState(null)
   const [subtitleTracks, setSubtitleTracks] = useState(null)
   const [needsTranscode, setNeedsTranscode] = useState(false)
+  const [duration, setDuration] = useState(null)
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
@@ -40,9 +41,12 @@ const useTrackInfo = (hash, fileIndex, enabled) => {
         const browserUnsupported = ['ac3', 'eac3', 'dts', 'dts_hd', 'truehd']
         const transcode = audio.some(a => browserUnsupported.includes(a.codec?.toLowerCase()))
 
+        const dur = parseFloat(data.format?.duration)
+
         setAudioTracks(audio.length ? audio : null)
         setSubtitleTracks(subs.length ? subs : null)
         setNeedsTranscode(transcode)
+        setDuration(dur > 0 ? dur : null)
         setLoaded(true)
       })
       .catch(() => {
@@ -55,7 +59,7 @@ const useTrackInfo = (hash, fileIndex, enabled) => {
     }
   }, [hash, fileIndex, enabled])
 
-  return { audioTracks, subtitleTracks, needsTranscode, loaded }
+  return { audioTracks, subtitleTracks, needsTranscode, duration, loaded }
 }
 
 export default useTrackInfo

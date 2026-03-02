@@ -96,7 +96,7 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
 
-  const { audioTracks: ffprobeAudio, needsTranscode, loaded: trackInfoLoaded } = useTrackInfo(hash, fileIndex, open)
+  const { audioTracks: ffprobeAudio, needsTranscode, duration: ffprobeDuration, loaded: trackInfoLoaded } = useTrackInfo(hash, fileIndex, open)
   const playerReady = !open || trackInfoLoaded || !hash || fileIndex == null
   const seekingRef = useRef(false)
 
@@ -154,13 +154,29 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
       enhanceAudioLabels()
       player.audioTracks().addEventListener('addtrack', enhanceAudioLabels)
 
-      // Handle seeking for transcoded streams
+      // For transcoded streams: set duration from ffprobe and handle seeking
       if (needsTranscode && hash && fileIndex != null) {
+        if (ffprobeDuration) {
+          player.duration(ffprobeDuration)
+          // Re-apply after metadata loads since the player may reset it
+          player.on('loadedmetadata', () => {
+            if (!isFinite(player.duration()) || player.duration() === 0) {
+              player.duration(ffprobeDuration)
+            }
+          })
+          player.on('durationchange', () => {
+            if (!isFinite(player.duration()) || player.duration() === 0) {
+              player.duration(ffprobeDuration)
+            }
+          })
+        }
+
         player.on('seeking', () => {
           if (seekingRef.current) return
           seekingRef.current = true
           const time = Math.floor(player.currentTime())
           player.src({ src: getTranscodeUrl(hash, fileIndex, time), type: 'video/mp4' })
+          if (ffprobeDuration) player.duration(ffprobeDuration)
           player.play()
           seekingRef.current = false
         })
@@ -175,7 +191,7 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
         }
       })
     },
-    [subtitleSources, ffprobeAudio, needsTranscode, hash, fileIndex, onNotSupported],
+    [subtitleSources, ffprobeAudio, needsTranscode, ffprobeDuration, hash, fileIndex, onNotSupported],
   )
 
   const useTranscode = needsTranscode && hash && fileIndex != null
