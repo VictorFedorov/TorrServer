@@ -68,7 +68,7 @@ func main() {
 	if err := run("cp", "-r", compileHtml, srcGo+"template/pages/"); err != nil {
 		if strings.Contains(err.Error(), "executable file not found") {
 			// Adding the ability to run on Windows with standard Go commands
-			if err = os.CopyFS(srcGo+"template/pages/", os.DirFS(filepath.Dir(compileHtml))); err != nil {
+			if err = copyDir(compileHtml, srcGo+"template/pages/"); err != nil {
 				log.Default().Fatalln(err.Error())
 			}
 		} else {
@@ -179,6 +179,24 @@ func run(name string, args ...string) error {
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	return cmd.Run()
+}
+
+func copyDir(src, dst string) error {
+	return filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, _ := filepath.Rel(src, path)
+		target := filepath.Join(dst, rel)
+		if d.IsDir() {
+			return os.MkdirAll(target, 0755)
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(target, data, 0644)
+	})
 }
 
 func cleanName(fn string) string {

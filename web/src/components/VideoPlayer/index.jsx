@@ -157,18 +157,24 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
       // For transcoded streams: set duration from ffprobe and handle seeking
       if (needsTranscode && hash && fileIndex != null) {
         if (ffprobeDuration) {
-          player.duration(ffprobeDuration)
-          // Re-apply after metadata loads since the player may reset it
-          player.on('loadedmetadata', () => {
-            if (!isFinite(player.duration()) || player.duration() === 0) {
+          // Force duration from ffprobe data.
+          // Fragmented MP4 streams report no duration in metadata, so the browser
+          // gives Infinity which Video.js converts to seekable.end(0) — a small
+          // number based on buffered data. We must always override this.
+          const forceDuration = () => {
+            if (player.duration() !== ffprobeDuration) {
               player.duration(ffprobeDuration)
             }
-          })
-          player.on('durationchange', () => {
-            if (!isFinite(player.duration()) || player.duration() === 0) {
-              player.duration(ffprobeDuration)
-            }
-          })
+            // Ensure progress bar is visible (not live mode)
+            player.removeClass('vjs-live')
+          }
+
+          forceDuration()
+          player.on('loadedmetadata', forceDuration)
+          player.on('durationchange', forceDuration)
+          player.on('loadeddata', forceDuration)
+          // timeupdate fires regularly (~250ms) and acts as a persistent guard
+          player.on('timeupdate', forceDuration)
         }
 
         player.on('seeking', () => {
