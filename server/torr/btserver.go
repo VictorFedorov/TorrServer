@@ -22,6 +22,8 @@ import (
 	"server/version"
 )
 
+const defaultTotalHalfOpenConns = 500
+
 type BTServer struct {
 	config *torrent.ClientConfig
 	client *torrent.Client
@@ -29,8 +31,9 @@ type BTServer struct {
 	storage *torrstor.Storage
 
 	torrents map[metainfo.Hash]*Torrent
+	lpd      *LPD
 
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
 var privateIPBlocks []*net.IPNet
@@ -69,6 +72,13 @@ func (bt *BTServer) Connect() error {
 	bt.torrents = make(map[metainfo.Hash]*Torrent)
 	InitApiHelper(bt)
 
+	if settings.BTsets.EnableLPD {
+		bt.lpd = NewLPD(bt)
+		if err := bt.lpd.Start(); err != nil {
+			log.Println("LPD start error:", err)
+		}
+	}
+
 	proxy.Start()
 	return err
 }
@@ -76,6 +86,10 @@ func (bt *BTServer) Connect() error {
 func (bt *BTServer) Disconnect() {
 	bt.mu.Lock()
 	defer bt.mu.Unlock()
+	if bt.lpd != nil {
+		bt.lpd.Stop()
+		bt.lpd = nil
+	}
 	if bt.client != nil {
 		bt.client.Close()
 		bt.client = nil
@@ -114,7 +128,7 @@ func (bt *BTServer) configure(ctx context.Context) {
 	bt.config.HTTPUserAgent = userAgent
 	bt.config.ExtendedHandshakeClientVersion = cliVers
 	bt.config.EstablishedConnsPerTorrent = settings.BTsets.ConnectionsLimit
-	bt.config.TotalHalfOpenConns = 500
+	bt.config.TotalHalfOpenConns = defaultTotalHalfOpenConns
 	// Encryption/Obfuscation
 	bt.config.EncryptionPolicy = torrent.EncryptionPolicy{ //	OE
 		ForceEncryption: settings.BTsets.ForceEncrypt, //	OE
@@ -253,6 +267,8 @@ func (bt *BTServer) configureProxy() error {
 }
 
 func (bt *BTServer) GetTorrent(hash torrent.InfoHash) *Torrent {
+	bt.mu.RLock()
+	defer bt.mu.RUnlock()
 	if torr, ok := bt.torrents[hash]; ok {
 		return torr
 	}
@@ -260,13 +276,18 @@ func (bt *BTServer) GetTorrent(hash torrent.InfoHash) *Torrent {
 }
 
 func (bt *BTServer) ListTorrents() map[metainfo.Hash]*Torrent {
+	bt.mu.RLock()
+	defer bt.mu.RUnlock()
 	list := make(map[metainfo.Hash]*Torrent)
 	maps.Copy(list, bt.torrents)
 	return list
 }
 
 func (bt *BTServer) RemoveTorrent(hash torrent.InfoHash) bool {
-	if torr, ok := bt.torrents[hash]; ok {
+	bt.mu.RLock()
+	torr, ok := bt.torrents[hash]
+	bt.mu.RUnlock()
+	if ok {
 		return torr.Close()
 	}
 	return false

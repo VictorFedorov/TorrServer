@@ -135,6 +135,8 @@
     "DHT": "DHT (Distributed Hash Table)",
     "DisableDHTHint": "Відключіть при відсутності мережі після запуску сервера",
     "DisablePEXHint": "Не рекомендується відключати",
+    "EnableLPD": "LPD (Local Peer Discovery)",
+    "EnableLPDHint": "Виявлення пірів у локальній мережі через мультикаст (BEP 14)",
     "DisableTCPHint": "Не вимикайте без включеного μTP",
     "DisableUPNPHint": "Автовідкриття порту на роутері",
     "DisableUTPHint": "Рекомендується відключити в ОС Windows",

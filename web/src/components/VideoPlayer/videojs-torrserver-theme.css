@@ -1,0 +1,71 @@
+/* TorrServer green theme for Video.js */
+
+.vjs-torrserver .vjs-play-progress,
+.vjs-torrserver .vjs-volume-level {
+  background-color: #00a572;
+}
+
+.vjs-torrserver .vjs-play-progress::before {
+  color: #00a572;
+}
+
+.vjs-torrserver .vjs-big-play-button {
+  background-color: rgba(0, 165, 114, 0.85);
+  border: none;
+  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  line-height: 70px;
+  font-size: 3em;
+  transition: background-color 0.2s;
+}
+
+.vjs-torrserver .vjs-big-play-button .vjs-icon-placeholder::before {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vjs-torrserver:hover .vjs-big-play-button,
+.vjs-torrserver .vjs-big-play-button:focus {
+  background-color: rgba(0, 165, 114, 1);
+}
+
+.vjs-torrserver .vjs-control-bar {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  height: 3.5em;
+}
+
+.vjs-torrserver .vjs-slider:focus {
+  box-shadow: 0 0 1em rgba(0, 165, 114, 0.5);
+}
+
+.vjs-torrserver .vjs-load-progress div {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Download button styling */
+.vjs-torrserver .vjs-download-button .vjs-icon-placeholder::before {
+  content: '\f019';
+  font-family: 'VideoJS', sans-serif;
+}
+
+/* Menu highlight */
+.vjs-torrserver .vjs-menu li.vjs-selected,
+.vjs-torrserver .vjs-menu li.vjs-selected:hover {
+  background-color: #00a572;
+  color: #fff;
+}
+
+.vjs-torrserver .vjs-menu li:hover {
+  background-color: rgba(0, 165, 114, 0.5);
+}
+
+/* Time tooltip */
+.vjs-torrserver .vjs-time-tooltip {
+  background-color: #00a572;
+}
+
+.vjs-torrserver .vjs-progress-control:hover .vjs-time-tooltip {
+  background-color: #00a572;
+}

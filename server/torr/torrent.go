@@ -21,6 +21,8 @@ import (
 	"server/torr/utils"
 )
 
+const defaultReadAhead = 16 << 20 // 16 MB
+
 type Torrent struct {
 	Title    string
 	Category string
@@ -132,17 +134,26 @@ func (t *Torrent) WaitInfo() bool {
 
 func (t *Torrent) GotInfo() bool {
 	// log.TLogln("GotInfo state:", t.Stat)
-	if t == nil || t.Stat == state.TorrentClosed {
+	if t == nil {
+		return false
+	}
+	t.muTorrent.Lock()
+	if t.Stat == state.TorrentClosed {
+		t.muTorrent.Unlock()
 		return false
 	}
 	// assume we have info in preload state
 	// and dont override with TorrentWorking
 	if t.Stat == state.TorrentPreload {
+		t.muTorrent.Unlock()
 		return true
 	}
 	t.Stat = state.TorrentGettingInfo
+	t.muTorrent.Unlock()
 	if t.WaitInfo() {
+		t.muTorrent.Lock()
 		t.Stat = state.TorrentWorking
+		t.muTorrent.Unlock()
 		t.AddExpiredTime(time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout))
 		return true
 	} else {
@@ -152,6 +163,8 @@ func (t *Torrent) GotInfo() bool {
 }
 
 func (t *Torrent) AddExpiredTime(duration time.Duration) {
+	t.muTorrent.Lock()
+	defer t.muTorrent.Unlock()
 	newExpiredTime := time.Now().Add(duration)
 	if t.expiredTime.Before(newExpiredTime) {
 		t.expiredTime = newExpiredTime
@@ -201,9 +214,9 @@ func (t *Torrent) progressEvent() {
 		t.DownloadSpeed = 0
 		t.UploadSpeed = 0
 	}
+	t.lastTimeSpeed = time.Now()
 	t.muTorrent.Unlock()
 
-	t.lastTimeSpeed = time.Now()
 	t.updateRA()
 }
 
@@ -221,12 +234,16 @@ func (t *Torrent) updateRA() {
 	// 	}
 	// 	go t.cache.AdjustRA(adj)
 	// }
-	adj := int64(16 << 20) // 16 MB fixed RA
+	adj := int64(defaultReadAhead)
 	go t.cache.AdjustRA(adj)
 }
 
 func (t *Torrent) expired() bool {
-	return t.cache.Readers() == 0 && t.expiredTime.Before(time.Now()) && (t.Stat == state.TorrentWorking || t.Stat == state.TorrentClosed)
+	t.muTorrent.Lock()
+	stat := t.Stat
+	expTime := t.expiredTime
+	t.muTorrent.Unlock()
+	return t.cache.Readers() == 0 && expTime.Before(time.Now()) && (stat == state.TorrentWorking || stat == state.TorrentClosed)
 }
 
 func (t *Torrent) Files() []*torrent.File {
@@ -287,7 +304,9 @@ func (t *Torrent) Close() bool {
 	if settings.ReadOnly && t.cache != nil && t.cache.GetUseReaders() > 0 {
 		return false
 	}
+	t.muTorrent.Lock()
 	t.Stat = state.TorrentClosed
+	t.muTorrent.Unlock()
 
 	if t.bt != nil {
 		t.bt.mu.Lock()

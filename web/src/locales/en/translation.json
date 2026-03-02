@@ -135,6 +135,8 @@
     "DHT": "DHT (Distributed Hash Table)",
     "DisableDHTHint": "Disable if there is no network after starting the server",
     "DisablePEXHint": "Better leave enabled",
+    "EnableLPD": "LPD (Local Peer Discovery)",
+    "EnableLPDHint": "Find peers on local network via multicast (BEP 14)",
     "DisableTCPHint": "Don't disable without μTP enabled",
     "DisableUPNPHint": "Auto-open port on router",
     "DisableUTPHint": "Recommended to disable in Windows OS",

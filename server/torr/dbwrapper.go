@@ -46,20 +46,24 @@ func AddTorrentDB(torr *Torrent) {
 	settings.AddTorrent(t)
 }
 
+func dbToTorrent(db *settings.TorrentDB) *Torrent {
+	torr := new(Torrent)
+	torr.TorrentSpec = db.TorrentSpec
+	torr.Title = db.Title
+	torr.Poster = db.Poster
+	torr.Category = db.Category
+	torr.Timestamp = db.Timestamp
+	torr.Size = db.Size
+	torr.Data = db.Data
+	torr.Stat = state.TorrentInDB
+	return torr
+}
+
 func GetTorrentDB(hash metainfo.Hash) *Torrent {
 	list := settings.ListTorrent()
 	for _, db := range list {
 		if hash == db.InfoHash {
-			torr := new(Torrent)
-			torr.TorrentSpec = db.TorrentSpec
-			torr.Title = db.Title
-			torr.Poster = db.Poster
-			torr.Category = db.Category
-			torr.Timestamp = db.Timestamp
-			torr.Size = db.Size
-			torr.Data = db.Data
-			torr.Stat = state.TorrentInDB
-			return torr
+			return dbToTorrent(db)
 		}
 	}
 	return nil
@@ -73,15 +77,7 @@ func ListTorrentsDB() map[metainfo.Hash]*Torrent {
 	ret := make(map[metainfo.Hash]*Torrent)
 	list := settings.ListTorrent()
 	for _, db := range list {
-		torr := new(Torrent)
-		torr.TorrentSpec = db.TorrentSpec
-		torr.Title = db.Title
-		torr.Poster = db.Poster
-		torr.Category = db.Category
-		torr.Timestamp = db.Timestamp
-		torr.Size = db.Size
-		torr.Data = db.Data
-		torr.Stat = state.TorrentInDB
+		torr := dbToTorrent(db)
 		ret[torr.TorrentSpec.InfoHash] = torr
 	}
 	return ret

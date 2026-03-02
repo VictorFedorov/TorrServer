@@ -17,6 +17,11 @@ import (
 	"github.com/anacrolix/torrent"
 )
 
+const (
+	preloadBufferSize  = 32768   // 32 KB
+	minPreloadEdgeSize = 8 << 20 // 8 MB
+)
+
 func (t *Torrent) Preload(index int, size int64) {
 	if size <= 0 {
 		return
@@ -127,8 +132,8 @@ func (t *Torrent) Preload(index int, size int64) {
 
 	// startend -> 8/16 MB
 	startend := t.Info().PieceLength
-	if startend < 8<<20 {
-		startend = 8 << 20
+	if startend < minPreloadEdgeSize {
+		startend = minPreloadEdgeSize
 	}
 
 	readerStart := file.NewReader()
@@ -191,7 +196,7 @@ func (t *Torrent) Preload(index int, size int64) {
 			}
 
 			offset := readerEndStart
-			tmp := make([]byte, 32768)
+			tmp := make([]byte, preloadBufferSize)
 			for offset+int64(len(tmp)) < readerEndEnd {
 				n, err := readerEnd.Read(tmp)
 				if err != nil {
@@ -224,7 +229,7 @@ func (t *Torrent) Preload(index int, size int64) {
 	readerStart.SetReadahead(readahead)
 
 	offset := int64(0)
-	tmp := make([]byte, 32768)
+	tmp := make([]byte, preloadBufferSize)
 	for offset+int64(len(tmp)) < readerStartEnd {
 		// Check if we should continue
 		t.muTorrent.Lock()

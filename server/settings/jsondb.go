@@ -33,7 +33,7 @@ func NewJsonDB() TorrServerDB {
 		Path:              Path,
 		filenameDelimiter: ".",
 		filenameExtension: ".json",
-		fileMode:          fs.FileMode(0o666),
+		fileMode:          fs.FileMode(0o644),
 		xPathDelimeter:    "/",
 	}
 	return globalJsonDB

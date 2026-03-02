@@ -15,17 +15,11 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 )
 
-func ParseFile(file multipart.File) (*torrent.TorrentSpec, error) {
-	minfo, err := metainfo.Load(file)
-	if err != nil {
-		return nil, err
-	}
+func buildTorrentSpec(minfo *metainfo.MetaInfo) (*torrent.TorrentSpec, error) {
 	info, err := minfo.UnmarshalInfo()
 	if err != nil {
 		return nil, err
 	}
-
-	// mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
 	mag := minfo.Magnet(nil, &info)
 	return &torrent.TorrentSpec{
 		InfoBytes:   minfo.InfoBytes,
@@ -33,6 +27,14 @@ func ParseFile(file multipart.File) (*torrent.TorrentSpec, error) {
 		DisplayName: info.Name,
 		InfoHash:    minfo.HashInfoBytes(),
 	}, nil
+}
+
+func ParseFile(file multipart.File) (*torrent.TorrentSpec, error) {
+	minfo, err := metainfo.Load(file)
+	if err != nil {
+		return nil, err
+	}
+	return buildTorrentSpec(minfo)
 }
 
 func ParseLink(link string) (*torrent.TorrentSpec, error) {
@@ -51,7 +53,7 @@ func ParseLink(link string) (*torrent.TorrentSpec, error) {
 	case "file":
 		return fromFile(urlLink.Path)
 	default:
-		err = fmt.Errorf("unknown scheme:", urlLink, urlLink.Scheme)
+		err = fmt.Errorf("unknown scheme: %v %s", urlLink, urlLink.Scheme)
 	}
 	return nil, err
 }
@@ -125,19 +127,7 @@ func fromHttp(link string) (*torrent.TorrentSpec, error) {
 	if err != nil {
 		return nil, err
 	}
-	info, err := minfo.UnmarshalInfo()
-	if err != nil {
-		return nil, err
-	}
-	// mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
-	mag := minfo.Magnet(nil, &info)
-
-	return &torrent.TorrentSpec{
-		InfoBytes:   minfo.InfoBytes,
-		Trackers:    [][]string{mag.Trackers},
-		DisplayName: info.Name,
-		InfoHash:    minfo.HashInfoBytes(),
-	}, nil
+	return buildTorrentSpec(minfo)
 }
 
 func fromFile(path string) (*torrent.TorrentSpec, error) {
@@ -148,17 +138,5 @@ func fromFile(path string) (*torrent.TorrentSpec, error) {
 	if err != nil {
 		return nil, err
 	}
-	info, err := minfo.UnmarshalInfo()
-	if err != nil {
-		return nil, err
-	}
-
-	// mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
-	mag := minfo.Magnet(nil, &info)
-	return &torrent.TorrentSpec{
-		InfoBytes:   minfo.InfoBytes,
-		Trackers:    [][]string{mag.Trackers},
-		DisplayName: info.Name,
-		InfoHash:    minfo.HashInfoBytes(),
-	}, nil
+	return buildTorrentSpec(minfo)
 }

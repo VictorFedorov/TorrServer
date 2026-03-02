@@ -64,7 +64,7 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 
 	if settings.BTsets.UseDisk {
 		name := filepath.Join(settings.BTsets.TorrentsSavePath, hash.HexString())
-		err := os.MkdirAll(name, 0o777)
+		err := os.MkdirAll(name, 0o755)
 		if err != nil {
 			log.TLogln("Error create dir:", err)
 		}
