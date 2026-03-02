@@ -5,6 +5,7 @@ import { getTorrServerHost } from 'utils/Hosts'
 const useTrackInfo = (hash, fileIndex, enabled) => {
   const [audioTracks, setAudioTracks] = useState(null)
   const [subtitleTracks, setSubtitleTracks] = useState(null)
+  const [needsTranscode, setNeedsTranscode] = useState(false)
 
   useEffect(() => {
     if (!enabled || !hash || fileIndex == null) return
@@ -35,8 +36,12 @@ const useTrackInfo = (hash, fileIndex, enabled) => {
             codec: s.codec_name || '',
           }))
 
+        const browserUnsupported = ['ac3', 'eac3', 'dts', 'dts_hd', 'truehd']
+        const transcode = audio.some(a => browserUnsupported.includes(a.codec?.toLowerCase()))
+
         setAudioTracks(audio.length ? audio : null)
         setSubtitleTracks(subs.length ? subs : null)
+        setNeedsTranscode(transcode)
       })
       .catch(() => {
         // ffprobe unavailable — silently ignore
@@ -47,7 +52,7 @@ const useTrackInfo = (hash, fileIndex, enabled) => {
     }
   }, [hash, fileIndex, enabled])
 
-  return { audioTracks, subtitleTracks }
+  return { audioTracks, subtitleTracks, needsTranscode }
 }
 
 export default useTrackInfo

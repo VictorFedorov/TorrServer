@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { DialogContent, DialogTitle, IconButton, Typography, useMediaQuery } from '@material-ui/core'
 import { makeStyles } from '@material-ui/core/styles'
 import CloseIcon from '@material-ui/icons/Close'
@@ -11,6 +11,12 @@ import { StyledButton } from '../TorrentCard/style'
 import VideoJsPlayer from './VideoJsPlayer'
 import useTrackInfo from './useTrackInfo'
 import { fetchSrtAsVttBlobUrl } from './srtToVtt'
+import { getTorrServerHost } from 'utils/Hosts'
+
+function getTranscodeUrl(hash, fileIndex, seekTime) {
+  const base = `${getTorrServerHost()}/transcode/${hash}/${fileIndex}`
+  return seekTime ? `${base}?t=${seekTime}` : base
+}
 
 function getMimeType(url) {
   const ext = url.split('?')[0].split('.').pop().toLowerCase()
@@ -90,7 +96,8 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
 
-  const { audioTracks: ffprobeAudio } = useTrackInfo(hash, fileIndex, open)
+  const { audioTracks: ffprobeAudio, needsTranscode } = useTrackInfo(hash, fileIndex, open)
+  const seekingRef = useRef(false)
 
   const handleClose = useCallback(() => setOpen(false), [])
 
@@ -146,6 +153,18 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
       enhanceAudioLabels()
       player.audioTracks().addEventListener('addtrack', enhanceAudioLabels)
 
+      // Handle seeking for transcoded streams
+      if (needsTranscode && hash && fileIndex != null) {
+        player.on('seeking', () => {
+          if (seekingRef.current) return
+          seekingRef.current = true
+          const time = Math.floor(player.currentTime())
+          player.src({ src: getTranscodeUrl(hash, fileIndex, time), type: 'video/mp4' })
+          player.play()
+          seekingRef.current = false
+        })
+      }
+
       // Handle playback errors (codec not supported)
       player.on('error', () => {
         const error = player.error()
@@ -155,10 +174,12 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
         }
       })
     },
-    [subtitleSources, ffprobeAudio, onNotSupported],
+    [subtitleSources, ffprobeAudio, needsTranscode, hash, fileIndex, onNotSupported],
   )
 
-  const mime = getMimeType(videoSrc)
+  const useTranscode = needsTranscode && hash && fileIndex != null
+  const effectiveSrc = useTranscode ? getTranscodeUrl(hash, fileIndex) : videoSrc
+  const effectiveMime = useTranscode ? 'video/mp4' : getMimeType(videoSrc)
 
   const playerOptions = {
     autoplay: 'any',
@@ -166,7 +187,7 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
     responsive: true,
     fluid: true,
     playbackRates: [0.5, 1, 1.5, 2],
-    sources: [{ src: videoSrc, type: mime || undefined }],
+    sources: [{ src: effectiveSrc, type: effectiveMime || undefined }],
     controlBar: {
       children: [
         'playToggle',
