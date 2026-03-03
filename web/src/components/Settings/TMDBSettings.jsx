@@ -11,6 +11,7 @@ export default function TMDBSettings({ settings, updateSettings }) {
     APIURL = 'https://api.themoviedb.org/3',
     ImageURL = 'https://image.tmdb.org',
     ImageURLRu = 'https://imagetmdb.com',
+    ProxyURL = '',
   } = TMDBSettings || {}
 
   const handleChange = (field, value) => {
@@ -79,6 +80,20 @@ export default function TMDBSettings({ settings, updateSettings }) {
           style={{ marginBottom: 10 }}
         />
         <FormHelperText margin='none'>{t('TMDB.ImageURLRuHint')}</FormHelperText>
+      </FormGroup>
+
+      <FormGroup style={{ marginTop: 20 }}>
+        <TextField
+          label={t('TMDB.ProxyURL')}
+          value={ProxyURL}
+          onChange={e => handleChange('ProxyURL', e.target.value)}
+          placeholder='socks5://user:password@127.0.0.1:1080'
+          variant='outlined'
+          size='small'
+          fullWidth
+          style={{ marginBottom: 10 }}
+        />
+        <FormHelperText margin='none'>{t('TMDB.ProxyURLHint')}</FormHelperText>
       </FormGroup>
       <br />
     </SecondarySettingsContent>

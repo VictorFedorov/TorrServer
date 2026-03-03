@@ -1,15 +1,20 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/net/proxy"
 
+	"server/log"
 	sets "server/settings"
 )
 
@@ -42,6 +47,51 @@ type tmdbAPIResult struct {
 
 type tmdbAPIResponse struct {
 	Results []tmdbAPIResult `json:"results"`
+}
+
+// buildTMDBClient creates an HTTP client, optionally with SOCKS5/HTTP proxy
+func buildTMDBClient(proxyURL string) *http.Client {
+	timeout := 15 * time.Second
+
+	if proxyURL == "" {
+		return &http.Client{Timeout: timeout}
+	}
+
+	parsed, err := url.Parse(proxyURL)
+	if err != nil {
+		log.TLogln("TMDB: invalid proxy URL:", err)
+		return &http.Client{Timeout: timeout}
+	}
+
+	scheme := strings.ToLower(parsed.Scheme)
+
+	if scheme == "socks5" || scheme == "socks5h" {
+		var auth *proxy.Auth
+		if parsed.User != nil {
+			pass, _ := parsed.User.Password()
+			auth = &proxy.Auth{
+				User:     parsed.User.Username(),
+				Password: pass,
+			}
+		}
+		dialer, err := proxy.SOCKS5("tcp", parsed.Host, auth, proxy.Direct)
+		if err != nil {
+			log.TLogln("TMDB: failed to create SOCKS5 dialer:", err)
+			return &http.Client{Timeout: timeout}
+		}
+		transport := &http.Transport{
+			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+				return dialer.Dial(network, addr)
+			},
+		}
+		return &http.Client{Transport: transport, Timeout: timeout}
+	}
+
+	// HTTP/HTTPS proxy
+	transport := &http.Transport{
+		Proxy: http.ProxyURL(parsed),
+	}
+	return &http.Client{Transport: transport, Timeout: timeout}
 }
 
 // tmdbSearch godoc
@@ -91,9 +141,11 @@ func tmdbSearch(c *gin.Context) {
 		url.QueryEscape(req.Query),
 	)
 
-	resp, err := http.Get(searchURL)
+	client := buildTMDBClient(tmdb.ProxyURL)
+	resp, err := client.Get(searchURL)
 	if err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"error": "TMDB request failed"})
+		log.TLogln("TMDB: request failed:", err)
+		c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("TMDB request failed: %v", err)})
 		return
 	}
 	defer resp.Body.Close()
@@ -101,6 +153,12 @@ func tmdbSearch(c *gin.Context) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to read TMDB response"})
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.TLogln("TMDB: API returned status", resp.StatusCode, string(body))
+		c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("TMDB API error: %d", resp.StatusCode)})
 		return
 	}
 

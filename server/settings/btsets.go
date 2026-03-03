@@ -22,6 +22,7 @@ type TMDBConfig struct {
 	APIURL     string // Base API URL (default: https://api.themoviedb.org)
 	ImageURL   string // Image URL (default: https://image.tmdb.org)
 	ImageURLRu string // Image URL for Russian users (default: https://imagetmdb.com)
+	ProxyURL   string // SOCKS5/HTTP proxy for TMDB API requests (e.g. socks5://127.0.0.1:1080)
 }
 
 type BTSets struct {

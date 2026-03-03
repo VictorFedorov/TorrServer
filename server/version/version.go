@@ -6,7 +6,7 @@ import (
 )
 
 // Version is set at build time via -ldflags "-X server/version.Version=<tag>"
-var Version = "MatriX.142.11"
+var Version = "MatriX.142.12"
 
 func GetTorrentVersion() string {
 	bi, ok := debug.ReadBuildInfo()

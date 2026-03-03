@@ -264,7 +264,9 @@
     "ImageURL": "TMDB Image URL",
     "ImageURLHint": "Base URL for TMDB images. Image paths are added automatically (default: https://image.tmdb.org)",
     "ImageURLRu": "TMDB Image URL (Russia)",
-    "ImageURLRuHint": "Alternative image URL for Russian users. Image paths are added automatically (default: https://imagetmdb.com)"
+    "ImageURLRuHint": "Alternative image URL for Russian users. Image paths are added automatically (default: https://imagetmdb.com)",
+    "ProxyURL": "TMDB Proxy",
+    "ProxyURLHint": "SOCKS5 or HTTP proxy for TMDB API requests (e.g. socks5://user:password@127.0.0.1:1080). Leave empty for direct connection"
   },
   "Tracker": "Tracker",
   "TurnOff": "Turn Off",
