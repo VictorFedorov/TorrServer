@@ -5,7 +5,6 @@ import { FormControlLabel, useMediaQuery, useTheme } from '@material-ui/core'
 import { settingsHost } from 'utils/Hosts'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { clearTMDBCache } from 'components/Add/helpers'
 import AppBar from '@material-ui/core/AppBar'
 import SwipeableViews from 'react-swipeable-views'
 import CircularProgress from '@material-ui/core/CircularProgress'
@@ -51,8 +50,6 @@ export default function SettingsDialog({ handleClose }) {
     sets.ReaderReadAHead = cachePercentage
     sets.PreloadCache = preloadCachePercentage
     axios.post(settingsHost(), { action: 'set', sets })
-    // Clear TMDB cache so fresh settings are fetched on next poster search
-    clearTMDBCache()
     localStorage.setItem('isVlcUsed', isVlcUsed)
     localStorage.setItem('isInfuseUsed', isInfuseUsed)
     localStorage.setItem('isIinaUsed', isIinaUsed)
@@ -206,8 +203,6 @@ export default function SettingsDialog({ handleClose }) {
             setCachePercentage(defaultSettings.ReaderReadAHead)
             setPreloadCachePercentage(defaultSettings.PreloadCache)
             updateSettings(defaultSettings)
-            // Clear TMDB cache when resetting to defaults
-            clearTMDBCache()
           }}
           color='secondary'
           variant='outlined'

@@ -64,6 +64,7 @@ func SetupRoute(route gin.IRouter) {
 
 	// Add TMDB settings endpoint
 	authorized.GET("/tmdb/settings", tmdbSettings)
+	authorized.POST("/tmdb/search", tmdbSearch)
 
 	authorized.GET("/ffp/:hash/:id", ffp)
 }

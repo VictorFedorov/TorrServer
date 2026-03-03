@@ -188,9 +188,28 @@ func ListTorrent() []*Torrent {
 	btlist := bts.ListTorrents()
 	dblist := ListTorrentsDB()
 
-	for hash, t := range dblist {
-		if _, ok := btlist[hash]; !ok {
-			btlist[hash] = t
+	for hash, dbTorr := range dblist {
+		if memTorr, ok := btlist[hash]; ok {
+			if memTorr.Title == "" {
+				memTorr.Title = dbTorr.Title
+			}
+			if memTorr.Poster == "" {
+				memTorr.Poster = dbTorr.Poster
+			}
+			if memTorr.Category == "" {
+				memTorr.Category = dbTorr.Category
+			}
+			if memTorr.Data == "" {
+				memTorr.Data = dbTorr.Data
+			}
+			if memTorr.Timestamp == 0 {
+				memTorr.Timestamp = dbTorr.Timestamp
+			}
+			if memTorr.Size == 0 {
+				memTorr.Size = dbTorr.Size
+			}
+		} else {
+			btlist[hash] = dbTorr
 		}
 	}
 	var ret []*Torrent

@@ -1,80 +1,17 @@
 import axios from 'axios'
 import parseTorrent from 'parse-torrent'
 import ptt from 'parse-torrent-title'
-import { tmdbSettingsHost } from 'utils/Hosts'
-
-// Cache for TMDB settings to avoid repeated API calls
-let tmdbSettingsCache = null
-
-// Clear TMDB settings cache - call this when settings are updated
-export const clearTMDBCache = () => {
-  tmdbSettingsCache = null
-}
-
-// Fetch TMDB settings from backend
-const getTMDBSettings = async () => {
-  if (tmdbSettingsCache) {
-    return tmdbSettingsCache
-  }
-
-  try {
-    const { data } = await axios.get(tmdbSettingsHost())
-    tmdbSettingsCache = data
-    return data
-  } catch (error) {
-    return {
-      APIKey: process.env.REACT_APP_TMDB_API_KEY || '',
-      APIURL: 'https://api.themoviedb.org/3',
-      ImageURL: 'https://image.tmdb.org',
-      ImageURLRu: 'https://imagetmdb.com',
-    }
-  }
-}
+import { tmdbSearchHost } from 'utils/Hosts'
 
 export const getMoviePosters = async (movieName, language = 'en') => {
-  const settings = await getTMDBSettings()
-
-  // If no API key is configured, return null
-  if (!settings.APIKey) {
-    return null
-  }
-
-  // Build API URL - automatically append /3/search/multi
-  let apiURL = settings.APIURL.replace(/^https?:\/\//, '').replace(/\/$/, '')
-
-  // If URL doesn't already contain the full path, add /3/search/multi
-  if (!apiURL.includes('/3/search/multi')) {
-    // Remove any partial paths that might exist
-    apiURL = apiURL.replace(/\/3.*$/, '').replace(/\/search.*$/, '')
-    apiURL = `${apiURL}/3/search/multi`
-  }
-
-  const url = `${window.location.protocol}//${apiURL}`
-
-  // Build image URL - strip protocol and trailing slash
-  const imgHost = `${window.location.protocol}//${
-    language === 'ru'
-      ? settings.ImageURLRu.replace(/^https?:\/\//, '').replace(/\/$/, '')
-      : settings.ImageURL.replace(/^https?:\/\//, '').replace(/\/$/, '')
-  }`
-
   return axios
-    .get(url, {
-      params: {
-        api_key: settings.APIKey,
-        language,
-        include_image_language: `${language},null,en`,
-        query: movieName,
-      },
-    })
-    .then(({ data: { results } }) =>
-      results.filter(el => el.poster_path).map(el => `${imgHost}/t/p/w300${el.poster_path}`),
-    )
+    .post(tmdbSearchHost(), { query: movieName, language })
+    .then(({ data }) => (data?.length > 0 ? data : null))
     .catch(() => null)
 }
 
 export const checkImageURL = async url => {
-  if (!url || !url.match(/.(\.jpg|\.jpeg|\.png|\.gif|\.svg||\.webp).*$/i)) return false
+  if (!url || !url.match(/.(\.jpg|\.jpeg|\.png|\.gif|\.svg|\.webp).*$/i)) return false
   return true
 }
 
