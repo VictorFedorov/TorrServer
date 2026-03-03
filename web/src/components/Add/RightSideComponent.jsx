@@ -255,7 +255,7 @@ export default function RightSideComponent({
                 ;[fixedTitle] = titleFixedMatch
               }
 
-              posterSearch(fixedTitle.trim(), posterSearchLanguage)
+              posterSearch(fixedTitle.trim(), posterSearchLanguage, { shouldRefreshMainPoster: true })
             }}
             color='primary'
             variant='contained'

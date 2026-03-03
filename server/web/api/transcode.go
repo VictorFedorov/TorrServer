@@ -93,6 +93,7 @@ func transcode(c *gin.Context) {
 		"-c:a", "aac",
 		"-b:a", "192k",
 		"-ac", "2",
+		"-af", "aresample=async=1",
 		"-f", "mp4",
 		"-movflags", "empty_moov+frag_keyframe+default_base_moof",
 		"pipe:1",
