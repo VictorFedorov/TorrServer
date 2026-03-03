@@ -3,12 +3,11 @@ import parseTorrent from 'parse-torrent'
 import ptt from 'parse-torrent-title'
 import { tmdbSearchHost } from 'utils/Hosts'
 
-export const getMoviePosters = async (movieName, language = 'en') => {
-  return axios
+export const getMoviePosters = async (movieName, language = 'en') =>
+  axios
     .post(tmdbSearchHost(), { query: movieName, language })
     .then(({ data }) => (data?.length > 0 ? data : null))
     .catch(() => null)
-}
 
 export const checkImageURL = async url => {
   if (!url || !url.match(/.(\.jpg|\.jpeg|\.png|\.gif|\.svg|\.webp).*$/i)) return false
