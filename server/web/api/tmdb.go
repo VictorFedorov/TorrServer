@@ -41,8 +41,14 @@ type tmdbSearchRequest struct {
 	Language string `json:"language"`
 }
 
+type tmdbSearchResult struct {
+	PosterURL string `json:"poster_url"`
+	MediaType string `json:"media_type"`
+}
+
 type tmdbAPIResult struct {
 	PosterPath string `json:"poster_path"`
+	MediaType  string `json:"media_type"`
 }
 
 type tmdbAPIResponse struct {
@@ -104,7 +110,7 @@ func buildTMDBClient(proxyURL string) *http.Client {
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		tmdbSearchRequest	true	"Search query"
-//	@Success		200		{array}		string				"Poster URLs"
+//	@Success		200		{array}		tmdbSearchResult	"Search results with poster URLs and media types"
 //	@Router			/tmdb/search [post]
 func tmdbSearch(c *gin.Context) {
 	if sets.BTsets == nil {
@@ -120,7 +126,7 @@ func tmdbSearch(c *gin.Context) {
 
 	tmdb := sets.BTsets.TMDBSettings
 	if tmdb.APIKey == "" {
-		c.JSON(http.StatusOK, []string{})
+		c.JSON(http.StatusOK, []tmdbSearchResult{})
 		return
 	}
 
@@ -174,15 +180,18 @@ func tmdbSearch(c *gin.Context) {
 		imgBase = strings.TrimRight(tmdb.ImageURLRu, "/")
 	}
 
-	var posters []string
+	var results []tmdbSearchResult
 	for _, r := range apiResp.Results {
 		if r.PosterPath != "" {
-			posters = append(posters, imgBase+"/t/p/w300"+r.PosterPath)
+			results = append(results, tmdbSearchResult{
+				PosterURL: imgBase + "/t/p/w300" + r.PosterPath,
+				MediaType: r.MediaType,
+			})
 		}
 	}
 
-	if posters == nil {
-		posters = []string{}
+	if results == nil {
+		results = []tmdbSearchResult{}
 	}
-	c.JSON(http.StatusOK, posters)
+	c.JSON(http.StatusOK, results)
 }

@@ -40,6 +40,6 @@ export const parseTorrentTitle = (parsingSource, callback) => {
       newTitle = torrentName.length < nameOfFileInsideTorrent.length ? torrentName : nameOfFileInsideTorrent
     }
 
-    callback({ parsedTitle: newTitle, originalName: name })
+    callback({ parsedTitle: newTitle, originalName: name, files: files || [] })
   })
 }

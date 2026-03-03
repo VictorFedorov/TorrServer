@@ -13,6 +13,7 @@ import { getTorrents } from 'utils/Utils'
 import parseTorrent from 'parse-torrent'
 import { ButtonWrapper } from 'style/DialogStyles'
 import { StyledDialog, StyledHeader } from 'style/CustomMaterialUiStyles'
+import ptt from 'parse-torrent-title'
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
 
 import { checkImageURL, getMoviePosters, checkTorrentSource, parseTorrentTitle } from './helpers'
@@ -80,7 +81,7 @@ export default function AddDialog({
   const fullScreen = useMediaQuery('@media (max-width:930px)')
 
   const updateTitleFromSource = useCallback(() => {
-    parseTorrentTitle(selectedFile || torrentSource, ({ parsedTitle, originalName }) => {
+    parseTorrentTitle(selectedFile || torrentSource, ({ parsedTitle, originalName, files }) => {
       if (!originalName) return
 
       setSkipDebounce(true)
@@ -88,8 +89,18 @@ export default function AddDialog({
       setIsCustomTitleEnabled(false)
       setOriginalTorrentTitle(originalName)
       setParsedTitle(parsedTitle)
+
+      if (!category && !isEditMode) {
+        const audioExts = /\.(mp3|flac|ogg|wav|aac|wma|opus|ape|m4a)$/i
+        if (files.length && files.filter(f => audioExts.test(f.name)).length > files.length / 2) {
+          setCategory('music')
+        } else {
+          const parsed = ptt.parse(originalName)
+          if (parsed.season || parsed.episode) setCategory('tv')
+        }
+      }
     })
-  }, [selectedFile, torrentSource])
+  }, [selectedFile, torrentSource, category, isEditMode])
 
   useEffect(() => {
     if (!selectedFile && !torrentSource) {
@@ -127,9 +138,16 @@ export default function AddDialog({
           return
         }
 
-        getMoviePosters(movieName, language).then(urlList => {
-          if (urlList) {
+        getMoviePosters(movieName, language).then(results => {
+          if (results) {
+            const urlList = results.map(r => r.poster_url)
             setPosterList(urlList)
+
+            if (!category && !isEditMode) {
+              const mediaType = results.find(r => r.media_type === 'movie' || r.media_type === 'tv')?.media_type
+              if (mediaType) setCategory(mediaType)
+            }
+
             if (!shouldRefreshMainPoster && isUserInteractedWithPoster) return
 
             const [firstPoster] = urlList
@@ -147,7 +165,7 @@ export default function AddDialog({
           }
         })
       },
-    [isUserInteractedWithPoster],
+    [isUserInteractedWithPoster, category, isEditMode],
   )
 
   const delayedPosterSearch = useMemo(() => debounce(posterSearch, 700), [posterSearch])
