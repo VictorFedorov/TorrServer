@@ -190,19 +190,25 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
         let seekOffset = 0
         let changingSource = false
 
-        const forceDuration = () => {
-          if (ffprobeDuration && player.duration() !== ffprobeDuration) {
-            player.duration(ffprobeDuration)
+        // Patch player.duration() to always return ffprobeDuration.
+        // The fMP4 stream has no `mvhd.duration` (empty_moov), so
+        // video.js sees duration=Infinity and enters live-UI mode:
+        // the progress thumb snaps to the right edge, jumps back on
+        // the next timeupdate, snaps forward again. Serving a fixed
+        // duration everywhere the framework asks kills the live-mode
+        // heuristic at the source, so we no longer need the reactive
+        // removeClass('vjs-live') on every timeupdate.
+        if (ffprobeDuration) {
+          const origDuration = player.duration.bind(player)
+          // eslint-disable-next-line no-param-reassign
+          player.duration = function (value) {
+            if (arguments.length > 0) return origDuration(value)
+            return ffprobeDuration
           }
           player.removeClass('vjs-live')
-        }
-
-        if (ffprobeDuration) {
-          forceDuration()
-          player.on('loadedmetadata', forceDuration)
-          player.on('durationchange', forceDuration)
-          player.on('loadeddata', forceDuration)
-          player.on('timeupdate', forceDuration)
+          // Nudge video.js once so it recomputes the progress bar
+          // against the new duration.
+          player.trigger('durationchange')
         }
 
         // Override currentTime: getter adds offset, setter triggers source change
@@ -218,7 +224,9 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
               changingSource = true
               seekOffset = targetTime
               player.src({ src: getTranscodeUrl(hash, fileIndex, targetTime), type: 'video/mp4' })
-              forceDuration()
+              // player.duration() is now patched to always return
+              // ffprobeDuration, so no explicit forceDuration call needed
+              // — the new source picks up the correct value on load.
               player.play()
               player.one('playing', () => { changingSource = false })
               setTimeout(() => { changingSource = false }, 10000)
