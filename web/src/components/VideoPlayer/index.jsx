@@ -67,6 +67,10 @@ const useStyles = makeStyles(theme => ({
   dialogPaper: {
     backgroundColor: '#fff',
     borderRadius: theme.spacing(1),
+    // Cap dialog height so the fluid video-js player can't push content
+    // past the viewport and trigger the scrollbar-appear / player-resize
+    // feedback loop. 95vh leaves a bit of breathing room around the dialog.
+    maxHeight: '95vh',
   },
   header: {
     backgroundColor: '#00a572',
