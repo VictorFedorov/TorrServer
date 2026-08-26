@@ -68,9 +68,15 @@ const useStyles = makeStyles(theme => ({
     backgroundColor: '#fff',
     borderRadius: theme.spacing(1),
     // Cap dialog height so the fluid video-js player can't push content
-    // past the viewport and trigger the scrollbar-appear / player-resize
-    // feedback loop. 95vh leaves a bit of breathing room around the dialog.
+    // past the viewport. 95vh leaves a bit of breathing room.
     maxHeight: '95vh',
+    // Kill any internal scroll on the paper itself. The dialog holds a
+    // fluid video player, not scrollable content.
+    overflow: 'hidden',
+    // Make paper a column flex container so DialogContent can flex-1
+    // into the remaining space below the header.
+    display: 'flex',
+    flexDirection: 'column',
   },
   header: {
     backgroundColor: '#00a572',
@@ -79,6 +85,9 @@ const useStyles = makeStyles(theme => ({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    // Don't let the header collapse — it has a fixed height, so the
+    // remaining space goes to the video content.
+    flexShrink: 0,
   },
   iconButton: {
     color: '#fff',
@@ -87,9 +96,25 @@ const useStyles = makeStyles(theme => ({
   content: {
     padding: 0,
     backgroundColor: '#000',
+    // MuiDialogContent default is overflow-y: auto, which produces the
+    // resize loop: player renders bigger than the remaining space,
+    // browser adds an inner scrollbar, that narrows the container,
+    // fluid player recomputes and shrinks, scrollbar goes away, repeat.
+    // The player fits or it doesn't — no scroll needed.
+    overflow: 'hidden',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Let the player take all the vertical space left by the header
+    // inside the 95vh-capped paper.
+    flex: 1,
+    minHeight: 0,
     '& .video-js': {
       width: '100%',
-      height: '100%',
+      // Height auto lets video.js fluid-mode manage aspect ratio,
+      // instead of fighting a hard-coded 100% height.
+      height: 'auto',
+      maxHeight: '100%',
     },
   },
 }))

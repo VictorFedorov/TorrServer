@@ -95,7 +95,15 @@ func transcode(c *gin.Context) {
 		"-ac", "2",
 		"-af", "aresample=async=1",
 		"-f", "mp4",
-		"-movflags", "empty_moov+frag_keyframe+default_base_moof",
+		// -frag_duration 1s + -min_frag_duration 500ms: flush an fMP4
+		// fragment every ~1s regardless of video-keyframe spacing.
+		// The previous frag_keyframe-only mode held bytes for 4-10s
+		// (typical WEB-DL GOP length), starving the browser's buffer
+		// between keyframes and producing regular playback stalls.
+		// Video is still -c:v copy, no re-encoding.
+		"-frag_duration", "1000000",
+		"-min_frag_duration", "500000",
+		"-movflags", "empty_moov+default_base_moof+separate_moof",
 		"pipe:1",
 	)
 
