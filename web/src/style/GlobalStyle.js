@@ -5,13 +5,21 @@ import { standaloneMedia } from './standaloneMedia'
 export default createGlobalStyle`
   *,
   *::before,
-  *::after {  
+  *::after {
     margin: 0;
     padding: 0;
     box-sizing: inherit;
   }
 
-  body {  
+  /* Reserve space for the vertical scrollbar even when it is not shown.
+     Prevents viewport-width jitter when a fluid-sized element (the video
+     player dialog) toggles the scrollbar on and off, which otherwise
+     drives the player into a resize loop. */
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  body {
     font-family: "Open Sans", sans-serif;
     box-sizing: border-box;
     -webkit-font-smoothing: antialiased;

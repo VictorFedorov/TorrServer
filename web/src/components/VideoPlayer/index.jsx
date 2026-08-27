@@ -67,6 +67,16 @@ const useStyles = makeStyles(theme => ({
   dialogPaper: {
     backgroundColor: '#fff',
     borderRadius: theme.spacing(1),
+    // Cap dialog height so the fluid video-js player can't push content
+    // past the viewport. 95vh leaves a bit of breathing room.
+    maxHeight: '95vh',
+    // Kill any internal scroll on the paper itself. The dialog holds a
+    // fluid video player, not scrollable content.
+    overflow: 'hidden',
+    // Make paper a column flex container so DialogContent can flex-1
+    // into the remaining space below the header.
+    display: 'flex',
+    flexDirection: 'column',
   },
   header: {
     backgroundColor: '#00a572',
@@ -75,6 +85,9 @@ const useStyles = makeStyles(theme => ({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    // Don't let the header collapse — it has a fixed height, so the
+    // remaining space goes to the video content.
+    flexShrink: 0,
   },
   iconButton: {
     color: '#fff',
@@ -83,9 +96,25 @@ const useStyles = makeStyles(theme => ({
   content: {
     padding: 0,
     backgroundColor: '#000',
+    // MuiDialogContent default is overflow-y: auto, which produces the
+    // resize loop: player renders bigger than the remaining space,
+    // browser adds an inner scrollbar, that narrows the container,
+    // fluid player recomputes and shrinks, scrollbar goes away, repeat.
+    // The player fits or it doesn't — no scroll needed.
+    overflow: 'hidden',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Let the player take all the vertical space left by the header
+    // inside the 95vh-capped paper.
+    flex: 1,
+    minHeight: 0,
     '& .video-js': {
       width: '100%',
-      height: '100%',
+      // Height auto lets video.js fluid-mode manage aspect ratio,
+      // instead of fighting a hard-coded 100% height.
+      height: 'auto',
+      maxHeight: '100%',
     },
   },
 }))
@@ -161,19 +190,25 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
         let seekOffset = 0
         let changingSource = false
 
-        const forceDuration = () => {
-          if (ffprobeDuration && player.duration() !== ffprobeDuration) {
-            player.duration(ffprobeDuration)
+        // Patch player.duration() to always return ffprobeDuration.
+        // The fMP4 stream has no `mvhd.duration` (empty_moov), so
+        // video.js sees duration=Infinity and enters live-UI mode:
+        // the progress thumb snaps to the right edge, jumps back on
+        // the next timeupdate, snaps forward again. Serving a fixed
+        // duration everywhere the framework asks kills the live-mode
+        // heuristic at the source, so we no longer need the reactive
+        // removeClass('vjs-live') on every timeupdate.
+        if (ffprobeDuration) {
+          const origDuration = player.duration.bind(player)
+          // eslint-disable-next-line no-param-reassign
+          player.duration = function (value) {
+            if (arguments.length > 0) return origDuration(value)
+            return ffprobeDuration
           }
           player.removeClass('vjs-live')
-        }
-
-        if (ffprobeDuration) {
-          forceDuration()
-          player.on('loadedmetadata', forceDuration)
-          player.on('durationchange', forceDuration)
-          player.on('loadeddata', forceDuration)
-          player.on('timeupdate', forceDuration)
+          // Nudge video.js once so it recomputes the progress bar
+          // against the new duration.
+          player.trigger('durationchange')
         }
 
         // Override currentTime: getter adds offset, setter triggers source change
@@ -189,7 +224,9 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
               changingSource = true
               seekOffset = targetTime
               player.src({ src: getTranscodeUrl(hash, fileIndex, targetTime), type: 'video/mp4' })
-              forceDuration()
+              // player.duration() is now patched to always return
+              // ffprobeDuration, so no explicit forceDuration call needed
+              // — the new source picks up the correct value on load.
               player.play()
               player.one('playing', () => { changingSource = false })
               setTimeout(() => { changingSource = false }, 10000)
