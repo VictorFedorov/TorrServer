@@ -3,12 +3,16 @@ package utils
 import (
 	"crypto/rand"
 	"encoding/base32"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 
+	"server/log"
 	"server/settings"
 
 	"github.com/anacrolix/torrent"
@@ -33,7 +37,12 @@ var defTrackers = []string{
 	"wss://tracker.openwebtorrent.com",
 }
 
-var loadedTrackers []string
+var (
+	loadedTrackers       []string
+	loadTrackersOnce     sync.Once
+	trackersListURL      = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best_ip.txt"
+	trackersFetchTimeout = 5 * time.Second
+)
 
 func GetTrackerFromFile() []string {
 	name := filepath.Join(settings.Path, "trackers.txt")
@@ -61,25 +70,49 @@ func GetDefTrackers() []string {
 }
 
 func loadNewTracker() {
-	if len(loadedTrackers) > 0 {
-		return
-	}
-	resp, err := http.Get("https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best_ip.txt")
-	if err == nil {
-		defer resp.Body.Close()
-		buf, err := io.ReadAll(resp.Body)
-		if err == nil {
-			arr := strings.Split(string(buf), "\n")
-			var ret []string
-			for _, s := range arr {
-				s = strings.TrimSpace(s)
-				if len(s) > 0 {
-					ret = append(ret, s)
-				}
-			}
-			loadedTrackers = append(ret, defTrackers...)
+	// Once + sticky fallback: try the remote list at most once per
+	// process lifetime. In RU/CN networks GitHub is regularly RST-ed
+	// at TCP level; the previous unbounded http.Get would hang the
+	// caller for kernel-level default (~130s) on every torrent add.
+	// If the fetch fails, loadedTrackers stays empty and
+	// GetDefTrackers falls back to the built-in defTrackers list.
+	loadTrackersOnce.Do(func() {
+		client := &http.Client{Timeout: trackersFetchTimeout}
+		resp, err := client.Get(trackersListURL)
+		if err != nil {
+			log.TLogln("trackerslist fetch failed, using built-in trackers:", err.Error())
+			return
 		}
-	}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			log.TLogln("trackerslist fetch failed, using built-in trackers:", fmt.Sprintf("status %d", resp.StatusCode))
+			return
+		}
+		buf, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.TLogln("trackerslist fetch failed, using built-in trackers:", err.Error())
+			return
+		}
+		arr := strings.Split(string(buf), "\n")
+		var ret []string
+		for _, s := range arr {
+			s = strings.TrimSpace(s)
+			if len(s) > 0 {
+				ret = append(ret, s)
+			}
+		}
+		if len(ret) == 0 {
+			log.TLogln("trackerslist fetch failed, using built-in trackers: empty list")
+			return
+		}
+		loadedTrackers = append(ret, defTrackers...)
+	})
+}
+
+// resetLoadedTrackersForTest clears cached trackers so tests can re-run loadNewTracker.
+func resetLoadedTrackersForTest() {
+	loadTrackersOnce = sync.Once{}
+	loadedTrackers = nil
 }
 
 func PeerIDRandom(peer string) string {
