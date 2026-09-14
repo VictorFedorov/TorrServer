@@ -1,9 +1,9 @@
 module server
 
-go 1.25.0
+go 1.27.0
 
 replace (
-	github.com/anacrolix/torrent v1.59.1 => github.com/tsynik/torrent v1.2.28
+	github.com/anacrolix/torrent v1.59.1 => github.com/tsynik/torrent v1.2.30
 	github.com/anacrolix/upnp v0.1.4 => github.com/tsynik/upnp v0.1.5
 )
 
@@ -37,11 +37,6 @@ require (
 )
 
 require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
-)
-
-require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/RoaringBitmap/roaring v1.9.4 // indirect
 	github.com/alecthomas/atomic v0.1.0-alpha2 // indirect
@@ -65,6 +60,7 @@ require (
 	github.com/bytedance/sonic v1.14.2 // indirect
 	github.com/bytedance/sonic/loader v0.4.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/edsrzf/mmap-go v1.2.0 // indirect
 	github.com/felixge/fgprof v0.9.5 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.12 // indirect
@@ -109,4 +105,5 @@ require (
 	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	golang.org/x/tools v0.45.0 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 )

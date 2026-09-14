@@ -12,6 +12,7 @@ import (
 
 	"server/log"
 	sets "server/settings"
+	"server/torr/utils"
 )
 
 var bts *BTServer
@@ -240,6 +241,7 @@ func SetSettings(set *sets.BTSets) {
 		return
 	}
 	sets.SetBTSets(set)
+	utils.InvalidateTrackersCache()
 	log.TLogln("drop all torrents")
 	dropAllTorrent()
 	time.Sleep(time.Second * 1)
@@ -257,6 +259,7 @@ func SetDefSettings() {
 		return
 	}
 	sets.SetDefaultConfig()
+	utils.InvalidateTrackersCache()
 	log.TLogln("drop all torrents")
 	dropAllTorrent()
 	time.Sleep(time.Second * 1)

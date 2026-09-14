@@ -47,6 +47,8 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
   const [loading, setLoading] = useState(false)
   const {
     RetrackersMode,
+    TrackersListURL,
+    DefaultTrackers,
     TorrentDisconnectTimeout,
     EnableDebug,
     EnableDLNA,
@@ -338,6 +340,30 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         </Select>
         <FormHelperText style={{ marginTop: '8px' }}>{t('SettingsDialog.RetrackersModeHint')}</FormHelperText>
       </FormGroup>
+      <TextField
+        onChange={inputForm}
+        margin='normal'
+        id='TrackersListURL'
+        label={t('SettingsDialog.TrackersListURL')}
+        helperText={t('SettingsDialog.TrackersListURLHint')}
+        value={TrackersListURL || ''}
+        type='url'
+        variant='outlined'
+        fullWidth
+      />
+      <TextField
+        onChange={inputForm}
+        margin='normal'
+        id='DefaultTrackers'
+        label={t('SettingsDialog.DefaultTrackers')}
+        helperText={t('SettingsDialog.DefaultTrackersHint')}
+        value={DefaultTrackers || ''}
+        type='text'
+        variant='outlined'
+        fullWidth
+        multiline
+        minRows={6}
+      />
       {/* DLNA Section */}
       <SettingSectionLabel style={{ marginTop: '20px' }}>{t('DLNA')}</SettingSectionLabel>
       <FormControlLabel
