@@ -331,5 +331,11 @@
   "Uncategorized": "Necategorizat",
   "UploadFile": "Upload fișier",
   "UploadSpeed": "Viteza de Upload",
-  "Viewed": "Vizualizat"
+  "Viewed": "Vizualizat",
+  "TorrentError": "Eroare",
+  "MetadataTimeout": "Fără metadate",
+  "MetadataTimeoutHint": "Nu s-au putut obține informațiile torrentului: niciun peer nu a trimis lista de fișiere la timp. Este posibil ca torrentul să nu aibă seederi acum.",
+  "GettingMetadata": "Se obțin informațiile torrentului (lista de fișiere)…",
+  "MetadataPeers": "Peeri găsiți: {{total}}, conectați: {{active}}, seederi: {{seeds}}",
+  "Retry": "Reîncearcă"
 }

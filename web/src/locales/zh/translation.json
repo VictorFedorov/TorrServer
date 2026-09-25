@@ -277,5 +277,11 @@
   "Uncategorized": "未分类",
   "UploadFile": "上传文件",
   "UploadSpeed": "上传速度",
-  "Viewed": "查看"
+  "Viewed": "查看",
+  "TorrentError": "错误",
+  "MetadataTimeout": "无元数据",
+  "MetadataTimeoutHint": "无法获取种子信息：在规定时间内没有任何节点发送文件列表。该种子目前可能没有做种者。",
+  "GettingMetadata": "正在获取种子信息（文件列表）…",
+  "MetadataPeers": "已发现节点：{{total}}，已连接：{{active}}，做种者：{{seeds}}",
+  "Retry": "重试"
 }

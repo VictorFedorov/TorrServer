@@ -31,6 +31,7 @@ type Torrent struct {
 	*torrent.TorrentSpec
 
 	Stat      state.TorrentStat
+	Error     string
 	Timestamp int64
 	Size      int64
 
@@ -85,6 +86,7 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 
 	bt.mu.Lock()
 	defer bt.mu.Unlock()
+	delete(bt.failed, spec.InfoHash)
 	if tor, ok := bt.torrents[spec.InfoHash]; ok {
 		return tor, nil
 	}
@@ -128,6 +130,9 @@ func (t *Torrent) WaitInfo() bool {
 	case <-t.closed:
 		return false
 	case <-tm.C:
+		if t.bt != nil {
+			t.bt.addFailed(t, "timeout getting torrent info")
+		}
 		return false
 	}
 }
@@ -326,6 +331,7 @@ func (t *Torrent) Status() *state.TorrentStatus {
 
 	st.Stat = t.Stat
 	st.StatString = t.Stat.String()
+	st.Error = t.Error
 	st.Title = t.Title
 	st.Category = t.Category
 	st.Poster = t.Poster

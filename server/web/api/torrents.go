@@ -17,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Action: add, get, set, rem, list, drop
+// Action: add, get, set, rem, list, drop, retry
 type torrReqJS struct {
 	requestI
 	Link     string `json:"link,omitempty"`
@@ -39,11 +39,11 @@ func abortWithJSONError(c *gin.Context, code int, err error) {
 // torrents godoc
 //
 //	@Summary		Handle torrents informations
-//	@Description	Allow to list, add, remove, get, set, drop, wipe torrents on server. The action depends of what has been asked.
+//	@Description	Allow to list, add, remove, get, set, drop, wipe, retry torrents on server. The action depends of what has been asked.
 //
 //	@Tags			API
 //
-//	@Param			request	body	torrReqJS	true	"Torrent request. Available params for action: add, get, set, rem, list, drop, wipe. link required for add, hash required for get, set, rem, drop."
+//	@Param			request	body	torrReqJS	true	"Torrent request. Available params for action: add, get, set, rem, list, drop, wipe, retry. link required for add, hash required for get, set, rem, drop, retry."
 //
 //	@Accept			json
 //	@Produce		json
@@ -69,6 +69,8 @@ func torrents(c *gin.Context) {
 		listTorrents(c)
 	case "drop":
 		dropTorrent(req, c)
+	case "retry":
+		retryTorrent(req, c)
 	case "wipe":
 		wipeTorrents(c)
 	default:
@@ -155,6 +157,9 @@ func getTorrent(req torrReqJS, c *gin.Context) {
 		return
 	}
 	tor := torr.GetTorrent(req.Hash)
+	if tor == nil {
+		tor = torr.GetFailedTorrent(req.Hash)
+	}
 
 	if tor != nil {
 		st := tor.Status()
@@ -162,6 +167,19 @@ func getTorrent(req torrReqJS, c *gin.Context) {
 	} else {
 		c.Status(http.StatusNotFound)
 	}
+}
+
+func retryTorrent(req torrReqJS, c *gin.Context) {
+	if req.Hash == "" {
+		abortWithJSONError(c, http.StatusBadRequest, errors.New("hash is empty"))
+		return
+	}
+	tor := torr.RetryTorrent(req.Hash)
+	if tor == nil {
+		abortWithJSONError(c, http.StatusNotFound, errors.New("failed torrent not found"))
+		return
+	}
+	c.JSON(200, tor.Status())
 }
 
 func setTorrent(req torrReqJS, c *gin.Context) {

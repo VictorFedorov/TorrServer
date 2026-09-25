@@ -16,6 +16,7 @@ import (
 	"github.com/wlynxg/anet"
 
 	"server/settings"
+	"server/torr/state"
 	"server/torr/storage/torrstor"
 	"server/torr/utils"
 	"server/version"
@@ -30,6 +31,7 @@ type BTServer struct {
 	storage *torrstor.Storage
 
 	torrents map[metainfo.Hash]*Torrent
+	failed   map[metainfo.Hash]*Torrent
 	lpd      *LPD
 
 	mu sync.RWMutex
@@ -71,6 +73,7 @@ func (bt *BTServer) Connect() error {
 	bt.configure(context.TODO())
 	bt.client, err = torrent.NewClient(bt.config)
 	bt.torrents = make(map[metainfo.Hash]*Torrent)
+	bt.failed = make(map[metainfo.Hash]*Torrent)
 	InitApiHelper(bt)
 
 	if settings.BTsets.EnableLPD {
@@ -280,6 +283,50 @@ func (bt *BTServer) ListTorrents() map[metainfo.Hash]*Torrent {
 	list := make(map[metainfo.Hash]*Torrent)
 	maps.Copy(list, bt.torrents)
 	return list
+}
+
+// addFailed stores a closed copy of the torrent with the failure reason.
+func (bt *BTServer) addFailed(tor *Torrent, reason string) {
+	if tor.TorrentSpec == nil {
+		return
+	}
+	failed := &Torrent{
+		Title:       tor.Title,
+		Category:    tor.Category,
+		Poster:      tor.Poster,
+		Data:        tor.Data,
+		TorrentSpec: tor.TorrentSpec,
+		Stat:        state.TorrentError,
+		Error:       reason,
+		Timestamp:   tor.Timestamp,
+		Size:        tor.Size,
+		bt:          bt,
+	}
+	bt.mu.Lock()
+	defer bt.mu.Unlock()
+	if bt.failed != nil {
+		bt.failed[tor.TorrentSpec.InfoHash] = failed
+	}
+}
+
+func (bt *BTServer) GetFailedTorrent(hash torrent.InfoHash) *Torrent {
+	bt.mu.RLock()
+	defer bt.mu.RUnlock()
+	return bt.failed[hash]
+}
+
+func (bt *BTServer) ListFailedTorrents() map[metainfo.Hash]*Torrent {
+	bt.mu.RLock()
+	defer bt.mu.RUnlock()
+	list := make(map[metainfo.Hash]*Torrent)
+	maps.Copy(list, bt.failed)
+	return list
+}
+
+func (bt *BTServer) RemoveFailedTorrent(hash torrent.InfoHash) {
+	bt.mu.Lock()
+	defer bt.mu.Unlock()
+	delete(bt.failed, hash)
 }
 
 func (bt *BTServer) RemoveTorrent(hash torrent.InfoHash) bool {

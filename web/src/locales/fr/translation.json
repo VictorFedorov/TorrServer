@@ -277,5 +277,11 @@
   "Uncategorized": "Non catégorisé",
   "UploadFile": "Téléverser un fichier",
   "UploadSpeed": "Vitesse de téléversement",
-  "Viewed": "Vu"
+  "Viewed": "Vu",
+  "TorrentError": "Erreur",
+  "MetadataTimeout": "Pas de métadonnées",
+  "MetadataTimeoutHint": "Impossible d'obtenir les informations du torrent : aucun pair n'a envoyé la liste des fichiers à temps. Le torrent n'a peut-être aucune source pour le moment.",
+  "GettingMetadata": "Récupération des informations du torrent (liste des fichiers)…",
+  "MetadataPeers": "Pairs trouvés : {{total}}, connectés : {{active}}, sources : {{seeds}}",
+  "Retry": "Réessayer"
 }

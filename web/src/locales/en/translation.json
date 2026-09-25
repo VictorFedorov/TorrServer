@@ -277,5 +277,11 @@
   "Uncategorized": "Uncategorized",
   "UploadFile": "Upload File",
   "UploadSpeed": "Upload speed",
-  "Viewed": "Viewed"
+  "Viewed": "Viewed",
+  "TorrentError": "Error",
+  "MetadataTimeout": "No metadata",
+  "MetadataTimeoutHint": "Could not get torrent info: no peer sent the file list in time. The torrent may have no seeds right now.",
+  "GettingMetadata": "Getting torrent info (file list)…",
+  "MetadataPeers": "Peers found: {{total}}, connected: {{active}}, seeds: {{seeds}}",
+  "Retry": "Retry"
 }
