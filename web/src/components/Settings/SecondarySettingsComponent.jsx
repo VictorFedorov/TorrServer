@@ -177,19 +177,45 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       </FormGroup>
       <FormGroup>
         <FormControlLabel
-          control={<Switch checked={!DisableTCP} onChange={inputForm} id='DisableTCP' color='secondary' />}
+          control={
+            <Switch
+              checked={!DisableTCP}
+              disabled={DisableUTP && !DisableTCP}
+              onChange={inputForm}
+              id='DisableTCP'
+              color='secondary'
+            />
+          }
           label='TCP (Transmission Control Protocol)'
           labelPlacement='start'
         />
         <FormHelperText margin='none'>{t('SettingsDialog.DisableTCPHint')}</FormHelperText>
+        {DisableUTP && !DisableTCP && (
+          <FormHelperText margin='none' error>
+            {t('SettingsDialog.PeerTransportRequired')}
+          </FormHelperText>
+        )}
       </FormGroup>
       <FormGroup>
         <FormControlLabel
-          control={<Switch checked={!DisableUTP} onChange={inputForm} id='DisableUTP' color='secondary' />}
+          control={
+            <Switch
+              checked={!DisableUTP}
+              disabled={DisableTCP && !DisableUTP}
+              onChange={inputForm}
+              id='DisableUTP'
+              color='secondary'
+            />
+          }
           label='μTP (Micro Transport Protocol)'
           labelPlacement='start'
         />
         <FormHelperText margin='none'>{t('SettingsDialog.DisableUTPHint')}</FormHelperText>
+        {DisableTCP && !DisableUTP && (
+          <FormHelperText margin='none' error>
+            {t('SettingsDialog.PeerTransportRequired')}
+          </FormHelperText>
+        )}
       </FormGroup>
       <FormGroup>
         <FormControlLabel

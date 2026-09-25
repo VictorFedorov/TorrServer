@@ -214,7 +214,8 @@
     "UseIINA": "Prompt to open video in IINA",
     "UseIINAHint": "Add IINA player button to torrent content list (macOS only)",
     "ViewedHistoryStorage": "Viewed History Storage:",
-    "ViewedStorageHint": "Choose where to store viewed history"
+    "ViewedStorageHint": "Choose where to store viewed history",
+    "PeerTransportRequired": "TCP and μTP cannot both be disabled: without them there are no connections to peers"
   },
   "Size": "Size",
   "SpecialThanks": "Special Thanks",

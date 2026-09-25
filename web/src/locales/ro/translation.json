@@ -215,7 +215,8 @@
     "UseIINA": "Solicitare pentru deschiderea videoclipului în IINA",
     "UseIINAHint": "Adăugați butonul IINA player la lista de conținut torrent (doar macOS)",
     "ViewedHistoryStorage": "Istoricul vizualizărilor stocate:",
-    "ViewedStorageHint": "Alegeți unde să stocați istoricul vizualizat"
+    "ViewedStorageHint": "Alegeți unde să stocați istoricul vizualizat",
+    "PeerTransportRequired": "TCP și μTP nu pot fi dezactivate simultan: fără ele nu există conexiuni cu peerii"
   },
   "Size": "Mărime",
   "SpecialThanks": "Mulțumiri speciale",
