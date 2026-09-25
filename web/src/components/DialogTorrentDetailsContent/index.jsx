@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { Button, ButtonGroup } from '@material-ui/core'
 import ptt from 'parse-torrent-title'
 import axios from 'axios'
-import { viewedHost } from 'utils/Hosts'
-import { GETTING_INFO, IN_DB } from 'torrentStates'
+import { torrentsHost, viewedHost } from 'utils/Hosts'
+import { GETTING_INFO, IN_DB, ERROR } from 'torrentStates'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import { useTranslation } from 'react-i18next'
 
@@ -36,6 +36,60 @@ const Loader = () => (
     <CircularProgress color='secondary' />
   </div>
 )
+
+const formatTime = seconds => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+
+const MetadataProgress = ({ limit }) => {
+  const [elapsed, setElapsed] = useState(0)
+
+  useEffect(() => {
+    const startedAt = Date.now()
+    const intervalId = setInterval(() => setElapsed(Math.floor((Date.now() - startedAt) / 1000)), 1000)
+    return () => clearInterval(intervalId)
+  }, [])
+
+  const shown = Math.min(elapsed, limit)
+  return <LoadingProgress value={shown} fullAmount={limit} label={`${formatTime(shown)} / ${formatTime(limit)}`} />
+}
+
+const MetadataWaiting = ({ torrent, limit }) => {
+  const { t } = useTranslation()
+  const { poster, title, name, hash, stat } = torrent
+  const retryTorrent = () => axios.post(torrentsHost(), { action: 'retry', hash })
+
+  return (
+    <DialogContentGrid>
+      <MainSection>
+        <Poster poster={poster}>{poster ? <img alt='poster' src={poster} /> : <NoImageIcon />}</Poster>
+
+        <div>
+          <SectionTitle mb={20}>{removeRedundantCharacters(title || name || hash)}</SectionTitle>
+
+          {stat === ERROR ? (
+            <>
+              <SectionSubName mb={20}>{t('MetadataTimeoutHint')}</SectionSubName>
+              <Button variant='contained' color='primary' size='large' onClick={retryTorrent}>
+                {t('Retry')}
+              </Button>
+            </>
+          ) : (
+            <>
+              <SectionSubName mb={20}>{t('GettingMetadata')}</SectionSubName>
+              <MetadataProgress limit={limit} />
+              <SectionSubName style={{ marginTop: '20px' }}>
+                {t('MetadataPeers', {
+                  total: torrent.total_peers || 0,
+                  active: torrent.active_peers || 0,
+                  seeds: torrent.connected_seeders || 0,
+                })}
+              </SectionSubName>
+            </>
+          )}
+        </div>
+      </MainSection>
+    </DialogContentGrid>
+  )
+}
 
 export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   const { t } = useTranslation()
@@ -145,7 +199,11 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
         }}
       >
         {isLoading ? (
-          <Loader />
+          [GETTING_INFO, IN_DB, ERROR].includes(stat) ? (
+            <MetadataWaiting torrent={torrent} limit={60 + (settings?.TorrentDisconnectTimeout || 0)} />
+          ) : (
+            <Loader />
+          )
         ) : isDetailedCacheView ? (
           <DetailedView
             downloadSpeed={downloadSpeed}

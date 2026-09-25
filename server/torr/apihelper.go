@@ -118,6 +118,33 @@ func GetTorrent(hashHex string) *Torrent {
 	return tor
 }
 
+// RetryTorrent re-adds a torrent that failed to get info and saves it to DB on success.
+func RetryTorrent(hashHex string) *Torrent {
+	failed := bts.GetFailedTorrent(metainfo.NewHashFromHex(hashHex))
+	if failed == nil {
+		return nil
+	}
+	tor, err := AddTorrent(failed.TorrentSpec, failed.Title, failed.Poster, failed.Data, failed.Category)
+	if err != nil {
+		return nil
+	}
+	tor.Timestamp = failed.Timestamp
+	go func() {
+		if !tor.GotInfo() {
+			return
+		}
+		if tor.Title == "" {
+			tor.Title = tor.Name()
+		}
+		SaveTorrentToDB(tor)
+	}()
+	return tor
+}
+
+func GetFailedTorrent(hashHex string) *Torrent {
+	return bts.GetFailedTorrent(metainfo.NewHashFromHex(hashHex))
+}
+
 func SetTorrent(hashHex, title, poster, category string, data string) *Torrent {
 	hash := metainfo.NewHashFromHex(hashHex)
 	torr := bts.GetTorrent(hash)
@@ -165,6 +192,7 @@ func RemTorrent(hashHex string) {
 		return
 	}
 	hash := metainfo.NewHashFromHex(hashHex)
+	bts.RemoveFailedTorrent(hash)
 	if bts.RemoveTorrent(hash) {
 		if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
 			name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
@@ -188,6 +216,12 @@ func RemTorrent(hashHex string) {
 func ListTorrent() []*Torrent {
 	btlist := bts.ListTorrents()
 	dblist := ListTorrentsDB()
+
+	for hash, failed := range bts.ListFailedTorrents() {
+		if _, ok := btlist[hash]; !ok {
+			btlist[hash] = failed
+		}
+	}
 
 	for hash, dbTorr := range dblist {
 		if memTorr, ok := btlist[hash]; ok {
@@ -232,6 +266,7 @@ func ListTorrent() []*Torrent {
 
 func DropTorrent(hashHex string) {
 	hash := metainfo.NewHashFromHex(hashHex)
+	bts.RemoveFailedTorrent(hash)
 	bts.RemoveTorrent(hash)
 }
 

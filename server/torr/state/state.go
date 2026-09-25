@@ -16,6 +16,8 @@ func (t TorrentStat) String() string {
 		return "Torrent closed"
 	case TorrentInDB:
 		return "Torrent in db"
+	case TorrentError:
+		return "Torrent error"
 	default:
 		return "Torrent unknown status"
 	}
@@ -28,6 +30,7 @@ const (
 	TorrentWorking
 	TorrentClosed
 	TorrentInDB
+	TorrentError
 )
 
 type TorrentStatus struct {
@@ -41,6 +44,7 @@ type TorrentStatus struct {
 	TorrsHash           string      `json:"torrs_hash,omitempty"`
 	Stat                TorrentStat `json:"stat"`
 	StatString          string      `json:"stat_string"`
+	Error               string      `json:"error,omitempty"`
 	LoadedSize          int64       `json:"loaded_size,omitempty"`
 	TorrentSize         int64       `json:"torrent_size,omitempty"`
 	PreloadedBytes      int64       `json:"preloaded_bytes,omitempty"`

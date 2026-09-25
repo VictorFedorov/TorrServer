@@ -4,6 +4,7 @@ import {
   PlayArrow as PlayArrowIcon,
   Close as CloseIcon,
   Delete as DeleteIcon,
+  Refresh as RefreshIcon,
 } from '@material-ui/icons'
 import { getPeerString, humanizeSize, humanizeSpeed, removeRedundantCharacters } from 'utils/Utils'
 import { playlistTorrHost, streamHost, torrentsHost } from 'utils/Hosts'
@@ -18,7 +19,7 @@ import { useTranslation } from 'react-i18next'
 import AddDialog from 'components/Add/AddDialog'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
-import { GETTING_INFO, IN_DB, CLOSED, PRELOAD, WORKING } from 'torrentStates'
+import { GETTING_INFO, IN_DB, CLOSED, PRELOAD, WORKING, ERROR } from 'torrentStates'
 import { TORRENT_CATEGORIES } from 'components/categories'
 import VideoPlayer from 'components/VideoPlayer'
 import { isFilePlayable } from 'components/DialogTorrentDetailsContent/helpers'
@@ -62,6 +63,7 @@ const Torrent = ({ torrent }) => {
 
   const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
   const deleteTorrent = () => axios.post(torrentsHost(), { action: 'rem', hash })
+  const retryTorrent = () => axios.post(torrentsHost(), { action: 'retry', hash })
 
   const getParsedTitle = () => {
     const parse = key => ptt.parse(title || '')?.[key] || ptt.parse(name || '')?.[key]
@@ -117,7 +119,12 @@ const Torrent = ({ torrent }) => {
             <span>{t('Details')}</span>
           </StyledButton>
 
-          {playableVideoList?.length === 1 && isSupported ? (
+          {stat === ERROR ? (
+            <StyledButton onClick={retryTorrent}>
+              <RefreshIcon />
+              <span>{t('Retry')}</span>
+            </StyledButton>
+          ) : playableVideoList?.length === 1 && isSupported ? (
             <VideoPlayer
               title={title}
               videoSrc={getFileLink(playableVideoList[0].path, playableVideoList[0].id)}
@@ -154,6 +161,7 @@ const Torrent = ({ torrent }) => {
               {category ? (catIndex >= 0 ? t(catArray.name) : category) : t('Name')}
             </div>
             <div className='description-torrent-title'>{parsedTitle}</div>
+            {stat === ERROR && <div className='description-error'>{t('MetadataTimeout')}</div>}
           </div>
 
           <div className='description-statistics-wrapper'>
@@ -236,6 +244,7 @@ export const StatusIndicator = ({ stat }) => {
     [WORKING]: t('TorrentWorking'),
     [CLOSED]: t('TorrentClosed'),
     [IN_DB]: t('TorrentInDb'),
+    [ERROR]: t('TorrentError'),
   }
 
   const colors = {
@@ -244,6 +253,7 @@ export const StatusIndicator = ({ stat }) => {
     [WORKING]: '#CDDC39',
     [CLOSED]: '#E57373',
     [IN_DB]: '#9E9E9E',
+    [ERROR]: '#F44336',
   }
 
   return (

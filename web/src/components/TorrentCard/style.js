@@ -150,6 +150,22 @@ export const TorrentCardDescription = styled.div`
     .description-torrent-title {
       overflow: hidden;
       word-break: break-all;
+      min-height: 0;
+    }
+
+    .description-error {
+      flex-shrink: 0;
+      align-self: flex-start;
+      margin-top: 4px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: #f44336;
+      color: #fff;
+      font-size: 0.75rem;
+
+      @media (max-width: 770px) {
+        font-size: 0.55rem;
+      }
     }
 
     .description-statistics-wrapper {

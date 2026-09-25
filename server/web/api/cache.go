@@ -48,6 +48,11 @@ func getCache(req cacheReqJS, c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
 		return
 	}
+	// GetTorrent restarts DB torrents; a failed one is restarted only by explicit retry.
+	if torr.GetFailedTorrent(req.Hash) != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
 	tor := torr.GetTorrent(req.Hash)
 
 	if tor != nil {

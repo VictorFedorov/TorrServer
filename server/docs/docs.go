@@ -1171,7 +1171,7 @@ const docTemplate = `{
                         "BasicAuth": []
                     }
                 ],
-                "description": "Allow to list, add, remove, get, set, drop, wipe torrents on server. The action depends of what has been asked.",
+                "description": "Allow to list, add, remove, get, set, drop, wipe, retry torrents on server. The action depends of what has been asked.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1184,7 +1184,7 @@ const docTemplate = `{
                 "summary": "Handle torrents informations",
                 "parameters": [
                     {
-                        "description": "Torrent request. Available params for action: add, get, set, rem, list, drop, wipe. link required for add, hash required for get, set, rem, drop.",
+                        "description": "Torrent request. Available params for action: add, get, set, rem, list, drop, wipe, retry. link required for add, hash required for get, set, rem, drop, retry.",
                         "name": "request",
                         "in": "body",
                         "required": true,
