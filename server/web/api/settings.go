@@ -45,6 +45,10 @@ func settings(c *gin.Context) {
 		c.JSON(200, sets.BTsets)
 		return
 	} else if req.Action == "set" {
+		if req.Sets != nil && req.Sets.DisableTCP && req.Sets.DisableUTP {
+			abortWithJSONError(c, http.StatusBadRequest, errors.New("TCP and uTP cannot both be disabled: no peer connections possible"))
+			return
+		}
 		torr.SetSettings(req.Sets)
 		dlna.Stop()
 		if req.Sets.EnableDLNA {

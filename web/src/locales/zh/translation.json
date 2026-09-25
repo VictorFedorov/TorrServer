@@ -214,7 +214,8 @@
     "UseIINA": "提示在 IINA 中打开视频",
     "UseIINAHint": "将 IINA 播放器按钮添加到种子内容列表（仅 macOS）",
     "ViewedHistoryStorage": "查看历史存储：",
-    "ViewedStorageHint": "存储查看历史记录的位置"
+    "ViewedStorageHint": "存储查看历史记录的位置",
+    "PeerTransportRequired": "不能同时禁用 TCP 和 μTP：否则无法连接任何节点"
   },
   "Size": "大小",
   "SpecialThanks": "特别感谢",
