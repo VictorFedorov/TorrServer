@@ -130,6 +130,7 @@ func (t *Torrent) WaitInfo() bool {
 	case <-t.Torrent.GotInfo():
 		if t.TorrentSpec != nil && len(t.TorrentSpec.InfoBytes) == 0 {
 			t.TorrentSpec.InfoBytes = t.Torrent.Metainfo().InfoBytes
+			go backfillInfoBytes(t.TorrentSpec.InfoHash, t.TorrentSpec.InfoBytes)
 		}
 		if t.bt != nil && t.bt.storage != nil {
 			t.cache = t.bt.storage.GetCache(t.Hash())
