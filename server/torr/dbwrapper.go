@@ -3,6 +3,7 @@ package torr
 import (
 	"encoding/json"
 
+	"server/log"
 	"server/settings"
 	"server/torr/state"
 
@@ -41,6 +42,17 @@ func AddTorrentDB(torr *Torrent) {
 	t.Timestamp = torr.Timestamp // time.Now().Unix()
 
 	settings.AddTorrent(t)
+}
+
+// backfillInfoBytes adds fetched metadata to a DB torrent that was saved without it.
+func backfillInfoBytes(hash metainfo.Hash, infoBytes []byte) {
+	tor := GetTorrentDB(hash)
+	if tor == nil || tor.TorrentSpec == nil || len(tor.TorrentSpec.InfoBytes) > 0 {
+		return
+	}
+	tor.TorrentSpec.InfoBytes = infoBytes
+	AddTorrentDB(tor)
+	log.TLogln("save info to db:", hash.HexString())
 }
 
 func dbToTorrent(db *settings.TorrentDB) *Torrent {
