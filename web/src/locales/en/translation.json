@@ -215,7 +215,9 @@
     "UseIINAHint": "Add IINA player button to torrent content list (macOS only)",
     "ViewedHistoryStorage": "Viewed History Storage:",
     "ViewedStorageHint": "Choose where to store viewed history",
-    "PeerTransportRequired": "TCP and μTP cannot both be disabled: without them there are no connections to peers"
+    "PeerTransportRequired": "TCP and μTP cannot both be disabled: without them there are no connections to peers",
+    "MergeAllM3U": "Combine M3U playlists",
+    "MergeAllM3UHint": "Lists all files in one (http://host:port/playlistall/all.m3u) playlist instead of a separate playlist for each torrent."
   },
   "Size": "Size",
   "SpecialThanks": "Special Thanks",

@@ -215,7 +215,9 @@
     "UseIINAHint": "Ajouter un bouton de lecteur IINA à la liste de contenu du torrent (macOS uniquement)",
     "ViewedHistoryStorage": "Stockage de l'historique des vues :",
     "ViewedStorageHint": "Choisissez où stocker l'historique des vues",
-    "PeerTransportRequired": "TCP et μTP ne peuvent pas être désactivés en même temps : sans eux, aucune connexion aux pairs"
+    "PeerTransportRequired": "TCP et μTP ne peuvent pas être désactivés en même temps : sans eux, aucune connexion aux pairs",
+    "MergeAllM3U": "Combiner les listes M3U",
+    "MergeAllM3UHint": "Tous les fichiers apparaissent dans une seule liste (http://host:port/playlistall/all.m3u), au lieu d'une liste distincte pour chaque torrent."
   },
   "Size": "Taille",
   "SpecialThanks": "Remerciements spéciaux",

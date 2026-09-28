@@ -86,6 +86,9 @@ type BTSets struct {
 	// Storage preferences
 	StoreSettingsInJson bool
 	StoreViewedInJson   bool
+
+	// M3U
+	MergeAllM3U bool // merge all torrents files into a single all.m3u playlist
 }
 
 func (v *BTSets) String() string {
@@ -188,6 +191,7 @@ func SetDefaultConfig() {
 	sets.ResponsiveMode = true
 	sets.ShowFSActiveTorr = true
 	sets.StoreSettingsInJson = true
+	sets.MergeAllM3U = false
 	// Set default TMDB settings
 	sets.TMDBSettings = TMDBConfig{
 		APIKey:     "",
