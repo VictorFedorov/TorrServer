@@ -216,7 +216,9 @@
     "UseIINAHint": "Adăugați butonul IINA player la lista de conținut torrent (doar macOS)",
     "ViewedHistoryStorage": "Istoricul vizualizărilor stocate:",
     "ViewedStorageHint": "Alegeți unde să stocați istoricul vizualizat",
-    "PeerTransportRequired": "TCP și μTP nu pot fi dezactivate simultan: fără ele nu există conexiuni cu peerii"
+    "PeerTransportRequired": "TCP și μTP nu pot fi dezactivate simultan: fără ele nu există conexiuni cu peerii",
+    "MergeAllM3U": "Combină playlisturile M3U",
+    "MergeAllM3UHint": "Toate fișierele apar într-un singur playlist (http://host:port/playlistall/all.m3u), în loc de playlist pentru fiecare torrent."
   },
   "Size": "Mărime",
   "SpecialThanks": "Mulțumiri speciale",
