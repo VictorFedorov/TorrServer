@@ -85,16 +85,20 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 		}
 	}
 
-	goTorrent, _, err := bt.client.AddTorrentSpec(spec)
-	if err != nil {
-		return nil, err
-	}
-
+	// Check before AddTorrentSpec: re-adding InfoBytes to a live torrent reruns setInfo and orphans its cache.
 	bt.mu.Lock()
 	defer bt.mu.Unlock()
 	delete(bt.failed, spec.InfoHash)
 	if tor, ok := bt.torrents[spec.InfoHash]; ok {
+		if tor.Torrent != nil {
+			tor.Torrent.AddTrackers(spec.Trackers)
+		}
 		return tor, nil
+	}
+
+	goTorrent, _, err := bt.client.AddTorrentSpec(spec)
+	if err != nil {
+		return nil, err
 	}
 
 	timeout := time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout)

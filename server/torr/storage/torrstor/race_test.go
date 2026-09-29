@@ -91,3 +91,23 @@ func TestCachePiecesConcurrentStateClose(t *testing.T) {
 		wg.Wait()
 	}
 }
+
+// anacrolix reruns setInfo when InfoBytes are added to a live torrent: the open cache must be reused.
+func TestStorageOpenTorrentTwiceReusesCache(t *testing.T) {
+	initTestSettings(t)
+	stor := NewStorage(1 << 20)
+	var h metainfo.Hash
+
+	first, _ := stor.OpenTorrent(testInfo(), h)
+	second, _ := stor.OpenTorrent(testInfo(), h)
+	if first != second {
+		t.Fatal("second OpenTorrent created a new cache instead of reusing the open one")
+	}
+
+	stor.CloseHash(h)
+	third, _ := stor.OpenTorrent(testInfo(), h)
+	if third == first {
+		t.Fatal("OpenTorrent after close returned the closed cache")
+	}
+	stor.CloseHash(h)
+}
