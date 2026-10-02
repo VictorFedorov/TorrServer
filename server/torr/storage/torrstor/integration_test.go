@@ -352,3 +352,43 @@ func TestReader_ClosedReader_NoSilentEOF(t *testing.T) {
 	t.Logf("OK: Read on closed reader returned (n=%d, err=%v).", n, rerr)
 }
 
+
+// Drop runs Cache.Close under the anacrolix client lock; a muReaders holder that
+// calls into anacrolix (CloseReader, setLoadPriority, ...) must not deadlock with it.
+func TestDrop_WhileReadersLockHolderCallsAnacrolix_NoDeadlock(t *testing.T) {
+	ensureSettingsForIntegration(t)
+
+	st := torrstor.NewStorage(64 << 20)
+	cl := newIsolatedClient(t, st)
+
+	mi, _ := makeTinyTorrent(t)
+	tt, _, err := cl.AddTorrentSpec(&torrent.TorrentSpec{InfoBytes: mi.InfoBytes, InfoHash: mi.HashInfoBytes()})
+	if err != nil {
+		t.Fatalf("AddTorrentSpec: %v", err)
+	}
+	select {
+	case <-tt.GotInfo():
+	case <-time.After(5 * time.Second):
+		t.Fatal("torrent did not GotInfo in 5s")
+	}
+	cache := st.GetCache(tt.InfoHash())
+	cache.SetTorrent(tt)
+	reader := cache.NewReader(tt.Files()[0])
+
+	cache.LockReadersForTest()
+	go tt.Drop()
+	time.Sleep(100 * time.Millisecond) // let Drop take the client lock and reach Cache.Close
+
+	called := make(chan struct{})
+	go func() {
+		reader.SetReadahead(1) // needs the anacrolix client lock
+		close(called)
+	}()
+	select {
+	case <-called:
+		cache.UnlockReadersForTest()
+	case <-time.After(3 * time.Second):
+		cache.UnlockReadersForTest()
+		t.Fatal("deadlock: Drop holds the client lock waiting for muReaders")
+	}
+}

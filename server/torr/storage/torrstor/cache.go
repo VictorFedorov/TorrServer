@@ -144,8 +144,13 @@ func (c *Cache) Close() error {
 		}
 	}
 
-	c.muReaders.Lock()
-	c.readers = nil
+	// Close runs under the anacrolix client lock on Drop, while muReaders holders
+	// call into anacrolix: waiting for muReaders here deadlocks.
+	go func() {
+		c.muReaders.Lock()
+		c.readers = nil
+		c.muReaders.Unlock()
+	}()
 	// NOTE: do NOT set c.pieces=nil here. A racy
 	// `go r.cache.getRemPieces()` (spawned by Reader.Close) or any
 	// `go cleanPieces` from a recent WriteAt may still be iterating
@@ -153,7 +158,6 @@ func (c *Cache) Close() error {
 	// iterators read c.pieces without holding that lock. The Cache
 	// struct is dropped from c.storage.caches above, so the map and
 	// its entries become unreachable and will be GC'd anyway.
-	c.muReaders.Unlock()
 
 	utils.FreeOSMemGC()
 	return nil
@@ -410,9 +414,10 @@ func (c *Cache) Readers() int {
 
 func (c *Cache) CloseReader(r *Reader) {
 	r.cache.muReaders.Lock()
-	r.Close()
 	delete(r.cache.readers, r)
 	r.cache.muReaders.Unlock()
+	// Reader.Close touches anacrolix internals, keep it outside muReaders
+	r.Close()
 	go c.clearPriority()
 }
 

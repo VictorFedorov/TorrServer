@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -59,6 +61,8 @@ func (args) Version() string {
 var params args
 
 func main() {
+	// pprof for memory diagnostics, reachable only from the host itself
+	go http.ListenAndServe("127.0.0.1:6060", nil)
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	arg.MustParse(&params)
