@@ -8,6 +8,9 @@ import "io"
 
 func (c *Cache) CleanPiecesForTest() { c.cleanPieces() }
 
+func (c *Cache) LockReadersForTest()   { c.muReaders.Lock() }
+func (c *Cache) UnlockReadersForTest() { c.muReaders.Unlock() }
+
 func (c *Cache) PieceSizeForTest(id int) int64 {
 	if p, ok := c.pieces[id]; ok {
 		return p.Size.Load()
