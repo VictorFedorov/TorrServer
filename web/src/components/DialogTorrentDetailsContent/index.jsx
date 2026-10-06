@@ -37,22 +37,25 @@ const Loader = () => (
   </div>
 )
 
+const METADATA_WAIT_SCREEN_DELAY = 5000 // ms of waiting before the spinner turns into the countdown screen
+
 const formatTime = seconds => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
 
-const MetadataProgress = ({ limit }) => {
-  const [elapsed, setElapsed] = useState(0)
+const secondsSince = startedAt => Math.floor((Date.now() - startedAt) / 1000)
+
+const MetadataProgress = ({ limit, startedAt }) => {
+  const [elapsed, setElapsed] = useState(() => secondsSince(startedAt))
 
   useEffect(() => {
-    const startedAt = Date.now()
-    const intervalId = setInterval(() => setElapsed(Math.floor((Date.now() - startedAt) / 1000)), 1000)
+    const intervalId = setInterval(() => setElapsed(secondsSince(startedAt)), 1000)
     return () => clearInterval(intervalId)
-  }, [])
+  }, [startedAt])
 
   const shown = Math.min(elapsed, limit)
   return <LoadingProgress value={shown} fullAmount={limit} label={`${formatTime(shown)} / ${formatTime(limit)}`} />
 }
 
-const MetadataWaiting = ({ torrent, limit }) => {
+const MetadataWaiting = ({ torrent, limit, startedAt }) => {
   const { t } = useTranslation()
   const { poster, title, name, hash, stat } = torrent
   const retryTorrent = () => axios.post(torrentsHost(), { action: 'retry', hash })
@@ -75,7 +78,7 @@ const MetadataWaiting = ({ torrent, limit }) => {
           ) : (
             <>
               <SectionSubName mb={20}>{t('GettingMetadata')}</SectionSubName>
-              <MetadataProgress limit={limit} />
+              <MetadataProgress limit={limit} startedAt={startedAt} />
               <SectionSubName style={{ marginTop: '20px' }}>
                 {t('MetadataPeers', {
                   total: torrent.total_peers || 0,
@@ -145,6 +148,18 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
     if (cacheLoaded && isLoading && torrentLoaded) setIsLoading(false)
   }, [stat, cache, isLoading])
 
+  const isWaitingForInfo = stat === GETTING_INFO || stat === IN_DB
+  const [waitStartedAt, setWaitStartedAt] = useState(null)
+  const [isWaitScreenShown, setIsWaitScreenShown] = useState(false)
+
+  useEffect(() => {
+    setIsWaitScreenShown(false)
+    if (!isWaitingForInfo) return undefined
+    setWaitStartedAt(Date.now())
+    const timerId = setTimeout(() => setIsWaitScreenShown(true), METADATA_WAIT_SCREEN_DELAY)
+    return () => clearTimeout(timerId)
+  }, [isWaitingForInfo])
+
   useEffect(() => {
     // getting viewed file list
     axios.post(viewedHost(), { action: 'list', hash }).then(({ data }) => {
@@ -199,8 +214,12 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
         }}
       >
         {isLoading ? (
-          [GETTING_INFO, IN_DB, ERROR].includes(stat) ? (
-            <MetadataWaiting torrent={torrent} limit={60 + (settings?.TorrentDisconnectTimeout || 0)} />
+          stat === ERROR || (isWaitingForInfo && isWaitScreenShown) ? (
+            <MetadataWaiting
+              torrent={torrent}
+              limit={60 + (settings?.TorrentDisconnectTimeout || 0)}
+              startedAt={waitStartedAt}
+            />
           ) : (
             <Loader />
           )
