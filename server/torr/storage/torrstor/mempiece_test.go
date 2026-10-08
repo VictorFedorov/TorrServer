@@ -26,17 +26,16 @@ func ensureSettings(t *testing.T) {
 	}
 }
 
-// newTestCacheClosed returns a Cache marked closed so cleanPieces goroutines
-// (started from MemPiece.WriteAt / *Piece.ReadAt) bail out immediately and
-// don't touch a non-existent c.torrent.
-func newTestCacheClosed(pieceLength int64) *Cache {
+// newTestCacheNoSweep returns a Cache whose cleanPieces goroutines (started from
+// MemPiece.WriteAt / *Piece.ReadAt) bail out and don't touch a non-existent c.torrent.
+func newTestCacheNoSweep(pieceLength int64) *Cache {
 	c := &Cache{
 		capacity:    pieceLength * 10,
 		pieceLength: pieceLength,
 		pieces:      make(map[int]*Piece),
 		readers:     make(map[*Reader]struct{}),
 	}
-	c.isClosed.Store(true) // makes cleanPieces a no-op (cache.go)
+	c.isRemove.Store(true) // a sweep "in progress" makes cleanPieces a no-op (cache.go)
 	return c
 }
 
@@ -49,7 +48,7 @@ func newTestPiece(c *Cache, id int) *Piece {
 // TestMemPiece_WriteThenRead verifies basic write/read.
 func TestMemPiece_WriteThenRead(t *testing.T) {
 	ensureSettings(t)
-	c := newTestCacheClosed(64)
+	c := newTestCacheNoSweep(64)
 	p := newTestPiece(c, 0)
 	mp := NewMemPiece(p)
 
@@ -79,7 +78,7 @@ func TestMemPiece_WriteThenRead(t *testing.T) {
 // written should not panic; it must return io.EOF.
 func TestMemPiece_ReadEmptyReturnsEOF(t *testing.T) {
 	ensureSettings(t)
-	c := newTestCacheClosed(64)
+	c := newTestCacheNoSweep(64)
 	p := newTestPiece(c, 0)
 	mp := NewMemPiece(p)
 
@@ -102,7 +101,7 @@ func TestMemPiece_ReadEmptyReturnsEOF(t *testing.T) {
 // the new contract.
 func TestMemPiece_ReadAfterRelease_DocumentsBug(t *testing.T) {
 	ensureSettings(t)
-	c := newTestCacheClosed(64)
+	c := newTestCacheNoSweep(64)
 	p := newTestPiece(c, 0)
 	mp := NewMemPiece(p)
 
@@ -124,7 +123,7 @@ func TestMemPiece_ReadAfterRelease_DocumentsBug(t *testing.T) {
 // Run with -race to catch regressions.
 func TestMemPiece_ReleaseConcurrentReadAt(t *testing.T) {
 	ensureSettings(t)
-	c := newTestCacheClosed(64)
+	c := newTestCacheNoSweep(64)
 	p := newTestPiece(c, 0)
 	mp := NewMemPiece(p)
 
@@ -162,7 +161,7 @@ func TestMemPiece_ReleaseConcurrentReadAt(t *testing.T) {
 // the available bytes (no error) and only returns EOF if n==0.
 func TestMemPiece_ReadPastSize(t *testing.T) {
 	ensureSettings(t)
-	c := newTestCacheClosed(16)
+	c := newTestCacheNoSweep(16)
 	p := newTestPiece(c, 0)
 	mp := NewMemPiece(p)
 

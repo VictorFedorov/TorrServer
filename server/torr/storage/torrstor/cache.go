@@ -132,6 +132,14 @@ func (c *Cache) Close() error {
 
 	c.storage.removeCache(c.hash)
 
+	// Free buffers now: anacrolix may keep a dropped torrent (and this cache) reachable
+	// for a long time, e.g. via a re-armed keep-alive timer of a closed peer connection.
+	if !settings.BTsets.UseDisk {
+		for _, p := range c.pieces {
+			p.mPiece.Release()
+		}
+	}
+
 	if settings.BTsets.RemoveCacheOnDrop {
 		name := filepath.Join(settings.BTsets.TorrentsSavePath, c.hash.HexString())
 		if name != "" && name != "/" {

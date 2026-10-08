@@ -111,3 +111,30 @@ func TestStorageOpenTorrentTwiceReusesCache(t *testing.T) {
 	}
 	stor.CloseHash(h)
 }
+
+// A closed cache may stay reachable from anacrolix: Close must free piece buffers and later writes must not allocate.
+func TestCacheCloseReleasesMemPieces(t *testing.T) {
+	initTestSettings(t)
+	stor := NewStorage(1 << 20)
+	var h metainfo.Hash
+	stor.OpenTorrent(testInfo(), h)
+	cache := stor.GetCache(h)
+
+	chunk := make([]byte, 1<<10)
+	cache.pieces[0].WriteAt(chunk, 0)
+	if !cache.pieces[0].mPiece.isAllocated() {
+		t.Fatal("piece buffer was not allocated by WriteAt")
+	}
+
+	cache.Close()
+	if cache.pieces[0].mPiece.isAllocated() {
+		t.Fatal("Close kept the piece buffer")
+	}
+
+	if n, _ := cache.pieces[1].WriteAt(chunk, 0); n != len(chunk) {
+		t.Fatalf("WriteAt after Close returned %d, want %d", n, len(chunk))
+	}
+	if cache.pieces[1].mPiece.isAllocated() {
+		t.Fatal("WriteAt after Close allocated a buffer")
+	}
+}
