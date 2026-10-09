@@ -1,17 +1,25 @@
 import { useCallback, useState } from 'react'
-import { Box, CircularProgress, DialogContent, DialogTitle, IconButton, Typography, useMediaQuery } from '@material-ui/core'
+import {
+  Box,
+  CircularProgress,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Typography,
+  useMediaQuery,
+} from '@material-ui/core'
 import { makeStyles } from '@material-ui/core/styles'
 import CloseIcon from '@material-ui/icons/Close'
 import PlayArrowIcon from '@material-ui/icons/PlayArrow'
 import videojs from 'video.js'
 import { useTranslation } from 'react-i18next'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
+import { getTorrServerHost } from 'utils/Hosts'
 
 import { StyledButton } from '../TorrentCard/style'
 import VideoJsPlayer from './VideoJsPlayer'
 import useTrackInfo from './useTrackInfo'
 import { fetchSrtAsVttBlobUrl } from './srtToVtt'
-import { getTorrServerHost } from 'utils/Hosts'
 
 function getTranscodeUrl(hash, fileIndex, seekTime) {
   const base = `${getTorrServerHost()}/transcode/${hash}/${fileIndex}`
@@ -125,7 +133,12 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
 
-  const { audioTracks: ffprobeAudio, needsTranscode, duration: ffprobeDuration, loaded: trackInfoLoaded } = useTrackInfo(hash, fileIndex, open)
+  const {
+    audioTracks: ffprobeAudio,
+    needsTranscode,
+    duration: ffprobeDuration,
+    loaded: trackInfoLoaded,
+  } = useTrackInfo(hash, fileIndex, open)
   const playerReady = !open || trackInfoLoaded || !hash || fileIndex == null
 
   const handleClose = useCallback(() => setOpen(false), [])
@@ -201,7 +214,7 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
         if (ffprobeDuration) {
           const origDuration = player.duration.bind(player)
           // eslint-disable-next-line no-param-reassign
-          player.duration = function (value) {
+          player.duration = function patchedDuration(value) {
             if (arguments.length > 0) return origDuration(value)
             return ffprobeDuration
           }
@@ -214,7 +227,7 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
         // Override currentTime: getter adds offset, setter triggers source change
         const origCurrentTime = player.currentTime.bind(player)
         // eslint-disable-next-line no-param-reassign
-        player.currentTime = function (seconds) {
+        player.currentTime = function patchedCurrentTime(seconds) {
           if (arguments.length > 0) {
             if (changingSource) return origCurrentTime(seconds)
             const targetTime = Math.floor(seconds)
@@ -228,8 +241,12 @@ const VideoPlayer = ({ videoSrc, title, onNotSupported, hash, fileIndex, subtitl
               // ffprobeDuration, so no explicit forceDuration call needed
               // — the new source picks up the correct value on load.
               player.play()
-              player.one('playing', () => { changingSource = false })
-              setTimeout(() => { changingSource = false }, 10000)
+              player.one('playing', () => {
+                changingSource = false
+              })
+              setTimeout(() => {
+                changingSource = false
+              }, 10000)
               return
             }
             return origCurrentTime(seconds)

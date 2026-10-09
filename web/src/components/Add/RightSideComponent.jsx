@@ -250,7 +250,7 @@ export default function RightSideComponent({
                 .replace(/\b(сезон|сезоны|серии?|сeзон|сeрии?)\b.*$/i, '')
                 .replace(/\b(1080p|720p|480p|2160p|HDRip|BDRip|WEBRip|WEB-DL|BluRay|HDTV)\b.*$/i, '')
                 .trim()
-              const titleFixedMatch = fixedTitle.match(/^([\p{L}\d][\p{L}\d :,'\-]*[\p{L}\d])/u)
+              const titleFixedMatch = fixedTitle.match(/^([\p{L}\d][\p{L}\d :,'-]*[\p{L}\d])/u)
               if (titleFixedMatch?.length && titleFixedMatch[0].length > 1) {
                 ;[fixedTitle] = titleFixedMatch
               }
