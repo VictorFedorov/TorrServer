@@ -18,6 +18,10 @@ func NewMemPiece(p *Piece) *MemPiece {
 }
 
 func (p *MemPiece) WriteAt(b []byte, off int64) (n int, err error) {
+	// Chunks still arriving for a dropped torrent are discarded, not buffered.
+	if p.piece.cache.isClosed.Load() {
+		return len(b), nil
+	}
 	p.mu.Lock()
 
 	if p.buffer == nil {
