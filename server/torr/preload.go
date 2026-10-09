@@ -5,6 +5,7 @@ import (
 	"io"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"server/ffprobe"
@@ -43,7 +44,16 @@ func (t *Torrent) Preload(index int, size int64) {
 	}
 
 	t.Stat = state.TorrentPreload
+	t.PreloadedBytes = 0
 	t.muTorrent.Unlock()
+
+	// bytes read by the start and end preload readers, reported as PreloadedBytes
+	var startRead, endRead atomic.Int64
+	publishProgress := func() {
+		t.muTorrent.Lock()
+		t.PreloadedBytes = startRead.Load() + endRead.Load()
+		t.muTorrent.Unlock()
+	}
 
 	defer func() {
 		t.muTorrent.Lock()
@@ -93,6 +103,7 @@ func (t *Torrent) Preload(index int, size int64) {
 				if stat != state.TorrentPreload {
 					return
 				}
+				publishProgress()
 
 				statStr := fmt.Sprint(file.Torrent().InfoHash().HexString(), " ",
 					utils2.Format(float64(t.PreloadedBytes)), "/",
@@ -207,6 +218,7 @@ func (t *Torrent) Preload(index int, size int64) {
 					break
 				}
 				offset += int64(n)
+				endRead.Store(offset - readerEndStart)
 
 				// Check if we should continue
 				t.muTorrent.Lock()
@@ -249,6 +261,7 @@ func (t *Torrent) Preload(index int, size int64) {
 			break
 		}
 		offset += int64(n)
+		startRead.Store(offset)
 
 		if readahead > 0 && readerStartEnd-(offset+int64(len(tmp))) < readahead {
 			readahead = 0
@@ -265,8 +278,12 @@ func (t *Torrent) Preload(index int, size int64) {
 	}
 
 	// Final log
+	publishProgress()
 	t.muTorrent.Lock()
 	finalStat := t.Stat
+	if finalStat == state.TorrentPreload && preloadErr == nil {
+		t.PreloadedBytes = t.PreloadSize
+	}
 	t.muTorrent.Unlock()
 
 	if finalStat == state.TorrentPreload {
