@@ -1,3 +1,6 @@
+// Disable MPTCP: CVE-2026-98432 (kernel IPv4 TCP use-after-free) is exploitable via MPTCP listeners.
+//go:debug multipathtcp=0
+
 package main
 
 import (
